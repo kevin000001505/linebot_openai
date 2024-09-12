@@ -1,5 +1,5 @@
 from flask import Flask, request, abort
-
+from linebot.models import TextMessage, AudioMessage
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -59,15 +59,31 @@ def callback():
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    msg = event.message.text
-    try:
-        GPT_answer = GPT_response(msg)
-        print(GPT_answer)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
-    except:
-        print(traceback.format_exc())
-        line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
+    # Start from here 
+    if isinstance(event.message, TextMessage):
+        msg = event.message.text
+        try:
+            GPT_answer = GPT_response(msg)
+            print(GPT_answer)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
+        except:
+            print(traceback.format_exc())
+            line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
+    elif isinstance(event.message, AudioMessage):
+        audio_content = line_bot_api.get_message_content(event.message.id)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tf:
+            for chunk in audio_content.iter_content():
+                tf.write(chunk)
+            tempfile_path = tf.name
         
+        # Here you would typically process the audio file
+        # For example, you might use a speech-to-text service
+        
+        # For now, let's just acknowledge we received a voice message
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="I received your voice message. Processing audio is not implemented yet.")
+        )
 
 @handler.add(PostbackEvent)
 def handle_message(event):
