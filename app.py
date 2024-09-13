@@ -25,6 +25,17 @@ handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 # OPENAI API Key初始化設定
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+def transcribe_audio(file_path):
+    if not os.path.exists(file_path):
+        return f"Error: The file {file_path} does not exist."
+
+    try:
+        with open(file_path, "rb") as audio_file:
+            transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        
+        return transcript["text"]
+    except Exception as e:
+        return f"Error during transcription: {str(e)}"
 
 def GPT_response(text):
     # 接收回應
@@ -75,15 +86,14 @@ def handle_message(event):
             for chunk in audio_content.iter_content():
                 tf.write(chunk)
             tempfile_path = tf.name
-        
-        # Here you would typically process the audio file
-        # For example, you might use a speech-to-text service
-        
-        # For now, let's just acknowledge we received a voice message
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="I received your voice message. Processing audio is not implemented yet.")
-        )
+        transcription = transcribe_audio(tempfile_path)
+        try:
+            GPT_answer = GPT_response(transcription)
+            print(GPT_answer)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
+        except:
+            print(traceback.format_exc())
+            line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
 
 @handler.add(PostbackEvent)
 def handle_message(event):
