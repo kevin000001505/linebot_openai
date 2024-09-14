@@ -11,12 +11,17 @@ from linebot.models import *
 #======python的函數庫==========
 import tempfile, os
 import json
+import logging
 import requests
 import datetime
 import openai
 import time
 import traceback
 #======python的函數庫==========
+
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
@@ -56,7 +61,7 @@ def GPT_response(text):
         temperature=0.6, 
         max_tokens=500
     )
-    print(response)
+    logging.info(response)
     # 重組回應
     answer = response['choices'][0]['message']['content']
     return answer
@@ -74,7 +79,7 @@ def Preplexity_response(text):
                 "content": f"{text}"
             }
         ],
-        "max_tokens": 2048,
+        "max_tokens": 4096,
         "temperature": 0.2,
         "top_p": 0.9,
         "return_citations": True,
@@ -93,9 +98,9 @@ def Preplexity_response(text):
         result = response.json()
         # Extract the assistant's reply
         answer = result['choices'][0]['message']['content']
-        print("Assistant's reply:", answer)
+        #print("Assistant's reply:", answer)
     else:
-        print("Error:", response.status_code, response.text)
+        logger.error("Error:", response.status_code, response.text)
     return answer
 
 # 監聽所有來自 /callback 的 Post Request
@@ -121,29 +126,32 @@ def handle_message(event):
     if isinstance(event.message, TextMessage):
         msg = event.message.text
         try:
-            #GPT_answer = GPT_response(msg)
+            # GPT_answer = GPT_response(msg)
             Preplexity_answer = Preplexity_response(msg)
-            #print(GPT_answer)
-            print(Preplexity_answer)
+            # print(GPT_answer)
+            # print(Preplexity_answer)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
         except:
-            print(traceback.format_exc())
+            logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
     elif isinstance(event.message, AudioMessage):
         audio_content = line_bot_api.get_message_content(event.message.id)
+        if not audio_content:
+            logger.error("No Audio Exist")
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tf:
             for chunk in audio_content.iter_content():
                 tf.write(chunk)
             tempfile_path = tf.name
+            logger.info(tempfile_path)
         msg = transcribe_audio(tempfile_path)
         try:
-            #GPT_answer = GPT_response(msg)
+            # GPT_answer = GPT_response(msg)
             Preplexity_answer = Preplexity_response(msg)
-            #print(GPT_answer)
-            print(Preplexity_answer)
+            # print(GPT_answer)
+            # print(Preplexity_answer)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
         except:
-            print(traceback.format_exc())
+            logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
 
 @handler.add(PostbackEvent)
@@ -159,7 +167,6 @@ def welcome(event):
     name = profile.display_name
     message = TextSendMessage(text=f'{name}歡迎加入')
     line_bot_api.reply_message(event.reply_token, message)
-        
         
 import os
 if __name__ == "__main__":
