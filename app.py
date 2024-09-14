@@ -42,23 +42,33 @@ headers = {
 }
 
 def transcribe_audio(file_path):
+    logger.info(f"Starting transcription for file: {file_path}")
     if not os.path.exists(file_path):
-        return f"Error: The file {file_path} does not exist."
+        error_msg = f"Error: The file {file_path} does not exist."
+        logger.error(error_msg)
+        return error_msg
 
     try:
         with open(file_path, "rb") as audio_file:
             transcript = openai.Audio.transcribe("whisper-1", audio_file)
-        
-        return transcript["text"]
+        logger.info("Transcription successful.")
+        return transcript.get("text", "無法獲取轉錄文本。")
+    except openai.error.OpenAIError as e:
+        error_msg = f"OpenAI API error during transcription: {str(e)}"
+        logger.error(error_msg)
+        return f"轉錄時發生錯誤：{str(e)}"
     except Exception as e:
-        return f"Error during transcription: {str(e)}"
+        error_msg = f"Unexpected error during transcription: {str(e)}"
+        logger.error(error_msg)
+        return f"轉錄時發生意外錯誤：{str(e)}"
+
 
 def GPT_response(text):
     # 接收回應
     response = openai.ChatCompletion.create(
         model="gpt-4o-mini", 
         messages=[{"role": "user", "content": text}], 
-        temperature=0.6, 
+        temperature=0.8, 
         max_tokens=500
     )
     logging.info(response)
@@ -115,6 +125,7 @@ def callback():
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
+        logger.error("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
     return 'OK'
 
@@ -122,7 +133,8 @@ def callback():
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # Start from here 
+
+    logger.info(f"Received message: {event.message.text}")
     if isinstance(event.message, TextMessage):
         msg = event.message.text
         try:
@@ -137,22 +149,32 @@ def handle_message(event):
     elif isinstance(event.message, AudioMessage):
         audio_content = line_bot_api.get_message_content(event.message.id)
         if not audio_content:
-            logger.error("No Audio Exist")
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tf:
-            for chunk in audio_content.iter_content():
-                tf.write(chunk)
-            tempfile_path = tf.name
-            logger.info(tempfile_path)
-        msg = transcribe_audio(tempfile_path)
+            logger.error("No audio content found.")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法獲取音訊內容。'))
+            return
         try:
-            # GPT_answer = GPT_response(msg)
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.m4a') as tf:
+                for chunk in audio_content.iter_content():
+                    tf.write(chunk)
+                tempfile_path = tf.name
+                logger.info(f"Audio saved to temporary file: {tempfile_path}")
+            
+            msg = transcribe_audio(tempfile_path)
+            if msg.startswith("Error"):
+                raise Exception(msg)
+            
+            # Process the transcribed text
             Preplexity_answer = Preplexity_response(msg)
-            # print(GPT_answer)
-            # print(Preplexity_answer)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
-        except:
-            logger.exception(traceback.format_exc())
-            line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=Preplexity_answer))
+        except Exception as e:
+            logger.exception("Error handling audio message:")
+            error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_message))
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(tempfile_path):
+                os.remove(tempfile_path)
+                logger.info(f"Temporary file {tempfile_path} deleted.")
 
 @handler.add(PostbackEvent)
 def handle_message(event):
@@ -171,4 +193,5 @@ def welcome(event):
 import os
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
+    logger.info(f"Starting server on port {port}")
     app.run(host='0.0.0.0', port=port)
