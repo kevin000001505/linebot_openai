@@ -74,7 +74,7 @@ def Preplexity_response(text):
                 "content": f"{text}"
             }
         ],
-        "max_tokens": "Optional",
+        "max_tokens": 2048,
         "temperature": 0.2,
         "top_p": 0.9,
         "return_citations": True,
