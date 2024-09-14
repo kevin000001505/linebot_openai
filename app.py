@@ -10,6 +10,8 @@ from linebot.models import *
 
 #======python的函數庫==========
 import tempfile, os
+import json
+import requests
 import datetime
 import openai
 import time
@@ -24,6 +26,15 @@ line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 # OPENAI API Key初始化設定
 openai.api_key = os.getenv('OPENAI_API_KEY')
+# Preplexity API key
+Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
+# Preplexity URL
+url = "https://api.perplexity.ai/chat/completions"
+# Set up the headers
+headers = {
+    "Authorization": f"Bearer {Preplexity_API_KEY}",
+    "Content-Type": "application/json"
+}
 
 def transcribe_audio(file_path):
     if not os.path.exists(file_path):
@@ -50,6 +61,42 @@ def GPT_response(text):
     answer = response['choices'][0]['message']['content']
     return answer
 
+def Preplexity_response(text):
+    payload = {
+        "model": "llama-3.1-sonar-small-128k-online",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Be precise and concise. Please respond in traditional Chinese (繁體中文)."
+            },
+            {
+                "role": "user",
+                "content": f"{text}"
+            }
+        ],
+        "max_tokens": "Optional",
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "return_citations": True,
+        "search_domain_filter": ["perplexity.ai"],
+        "return_images": True,
+        "return_related_questions": True,
+        "search_recency_filter": "month",
+        "top_k": 0,
+        "stream": False,
+        "presence_penalty": 0,
+        "frequency_penalty": 1
+    }
+    response = requests.request("POST", url, json=payload, headers=headers)
+    if response.status_code == 200:
+        # Parse the JSON response
+        result = response.json()
+        # Extract the assistant's reply
+        answer = result['choices'][0]['message']['content']
+        print("Assistant's reply:", answer)
+    else:
+        print("Error:", response.status_code, response.text)
+    return answer
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
@@ -74,9 +121,11 @@ def handle_message(event):
     if isinstance(event.message, TextMessage):
         msg = event.message.text
         try:
-            GPT_answer = GPT_response(msg)
-            print(GPT_answer)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
+            #GPT_answer = GPT_response(msg)
+            Preplexity_answer = Preplexity_response(msg)
+            #print(GPT_answer)
+            print(Preplexity_answer)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
         except:
             print(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
@@ -86,11 +135,13 @@ def handle_message(event):
             for chunk in audio_content.iter_content():
                 tf.write(chunk)
             tempfile_path = tf.name
-        transcription = transcribe_audio(tempfile_path)
+        msg = transcribe_audio(tempfile_path)
         try:
-            GPT_answer = GPT_response(transcription)
-            print(GPT_answer)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
+            #GPT_answer = GPT_response(msg)
+            Preplexity_answer = Preplexity_response(msg)
+            #print(GPT_answer)
+            print(Preplexity_answer)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
         except:
             print(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
