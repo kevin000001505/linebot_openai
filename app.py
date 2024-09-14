@@ -134,8 +134,8 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
-    logger.info(f"Received message: {event.message.text}")
     if isinstance(event.message, TextMessage):
+        logger.info(f"Received message: {event.message.text}")
         msg = event.message.text
         try:
             # GPT_answer = GPT_response(msg)
@@ -147,6 +147,7 @@ def handle_message(event):
             logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
     elif isinstance(event.message, AudioMessage):
+        logger.info('Receive Voice Message')
         audio_content = line_bot_api.get_message_content(event.message.id)
         if not audio_content:
             logger.error("No audio content found.")
