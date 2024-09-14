@@ -62,7 +62,6 @@ def transcribe_audio(file_path):
         logger.error(error_msg)
         return f"轉錄時發生意外錯誤：{str(e)}"
 
-
 def GPT_response(text):
     # 接收回應
     response = openai.ChatCompletion.create(
@@ -113,6 +112,9 @@ def Preplexity_response(text):
         logger.error("Error:", response.status_code, response.text)
     return answer
 
+def Further_question(text):
+
+    return None
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -145,7 +147,6 @@ def handle_message(event):
             logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
     elif isinstance(event.message, AudioMessage):
-        logger.info('Receive Voice Message')
         audio_content = line_bot_api.get_message_content(event.message.id)
         if not audio_content:
             logger.error("No audio content found.")
