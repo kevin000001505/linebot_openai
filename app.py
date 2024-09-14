@@ -131,7 +131,7 @@ def callback():
 
 
 # 處理訊息
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=(TextMessage, AudioMessage))
 def handle_message(event):
 
     if isinstance(event.message, TextMessage):
@@ -140,8 +140,6 @@ def handle_message(event):
         try:
             # GPT_answer = GPT_response(msg)
             Preplexity_answer = Preplexity_response(msg)
-            # print(GPT_answer)
-            # print(Preplexity_answer)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
         except:
             logger.exception(traceback.format_exc())
