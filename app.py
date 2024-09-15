@@ -1,5 +1,6 @@
+
 from flask import Flask, request, abort
-from linebot.models import TextMessage, AudioMessage
+from linebot.models import TextMessage, AudioMessage, ImageMessage
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -7,6 +8,13 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import *
+
+#======langchain的函數庫==========
+from langchain_community.chat_models import ChatPerplexity
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.prompts import ChatPromptTemplate
+#======langchain的函數庫==========
 
 #======python的函數庫==========
 import tempfile, os
@@ -76,41 +84,57 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
-    payload = {
-        "model": "llama-3.1-sonar-small-128k-online",
-        "messages": [
-            {
-                "role": "system",
-                "content": "Be precise and concise. Please respond in traditional Chinese (繁體中文)."
-            },
-            {
-                "role": "user",
-                "content": f"{text}"
-            }
-        ],
-        "max_tokens": 4096,
-        "temperature": 0.2,
-        "top_p": 0.9,
-        "return_citations": True,
-        "search_domain_filter": ["perplexity.ai"],
-        "return_images": True,
-        "return_related_questions": True,
-        "search_recency_filter": "month",
-        "top_k": 0,
-        "stream": False,
-        "presence_penalty": 0,
-        "frequency_penalty": 1
-    }
-    response = requests.request("POST", url, json=payload, headers=headers)
-    if response.status_code == 200:
-        # Parse the JSON response
-        result = response.json()
-        # Extract the assistant's reply
-        answer = result['choices'][0]['message']['content']
-        #print("Assistant's reply:", answer)
+    #Preplexity chatbot
+    chat = ChatPerplexity(
+        temperature=0.2,
+        model="llama-3.1-sonar-small-128k-online",
+        pplx_api_key=Preplexity_API_KEY,
+        max_tokens=2048,
+    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Be precise and concise. Please respond in traditional Chinese (繁體中文)."),
+        ("human", "{input}")
+    ])
+    chain = prompt | chat
+    # payload = {
+    #     "model": "llama-3.1-sonar-small-128k-online",
+    #     "messages": [
+    #         {
+    #             "role": "system",
+    #             "content": "Be precise and concise. Please respond in traditional Chinese (繁體中文)."
+    #         },
+    #         {
+    #             "role": "user",
+    #             "content": f"{text}"
+    #         }
+    #     ],
+    #     "max_tokens": 4096,
+    #     "temperature": 0.2,
+    #     "top_p": 0.9,
+    #     "return_citations": True,
+    #     "search_domain_filter": ["perplexity.ai"],
+    #     "return_images": True,
+    #     "return_related_questions": True,
+    #     "search_recency_filter": "month",
+    #     "top_k": 0,
+    #     "stream": False,
+    #     "presence_penalty": 0,
+    #     "frequency_penalty": 1
+    # }
+    # response = requests.request("POST", url, json=payload, headers=headers)
+    # if response.status_code == 200:
+    #     # Parse the JSON response
+    #     result = response.json()
+    #     # Extract the assistant's reply
+    #     answer = result['choices'][0]['message']['content']
+    #     #print("Assistant's reply:", answer)
+    # else:
+    #     logger.error("Error:", response.status_code, response.text)
+    response = chain.invoke({"input": f"{text}"})
+    if response:
+        return response.content
     else:
-        logger.error("Error:", response.status_code, response.text)
-    return answer
+        logger.error("Error", response.text)
 
 def Further_question(text):
 
@@ -133,9 +157,13 @@ def callback():
 
 
 # 處理訊息
-@handler.add(MessageEvent, message=(TextMessage, AudioMessage))
+@handler.add(MessageEvent, message=(TextMessage, AudioMessage, ImageMessage))
 def handle_message(event):
-
+    memory = ConversationBufferWindowMemory(k=5)
+    if isinstance(event.message, ImageMessage):
+        logger.info("Received Image message")
+        
+        pass
     if isinstance(event.message, TextMessage):
         logger.info(f"Received message: {event.message.text}")
         msg = event.message.text
