@@ -10,6 +10,7 @@ from linebot.models import *
 
 #======langchain的函數庫==========
 from langchain_community.chat_models import ChatPerplexity
+from langchain.chains import LLMChain
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
@@ -93,9 +94,10 @@ def Preplexity_response(text):
     )
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Be precise and concise. Please respond in traditional Chinese (繁體中文)."),
+        ("history", "{history}"),
         ("human", "{input}")
     ])
-    chain = ConversationChain(
+    chain = LLMChain(
         llm=chat,
         prompt=prompt,
         memory=memory
@@ -134,7 +136,7 @@ def Preplexity_response(text):
     #     #print("Assistant's reply:", answer)
     # else:
     #     logger.error("Error:", response.status_code, response.text)
-    response = chain.predict(input=text)
+    response = chain.run(input=text)
     if response:
         return response
     else:
