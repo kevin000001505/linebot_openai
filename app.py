@@ -136,7 +136,11 @@ def Preplexity_response(text):
     #     #print("Assistant's reply:", answer)
     # else:
     #     logger.error("Error:", response.status_code, response.text)
-    response = chain.run(input=text)
+    try:
+        response = chain.run(input=text)
+        logger.info(response)
+    except Exception as e:
+        logger.error(e)
     if response:
         return response
     else:
