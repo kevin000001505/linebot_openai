@@ -83,6 +83,7 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
+    memory = ConversationBufferWindowMemory(k=5)
     #Preplexity chatbot
     chat = ChatPerplexity(
         temperature=0.2,
@@ -94,7 +95,11 @@ def Preplexity_response(text):
         ("system", "Be precise and concise. Please respond in traditional Chinese (繁體中文)."),
         ("human", "{input}")
     ])
-    chain = prompt | chat
+    chain = ConversationChain(
+        llm=chat,
+        prompt=prompt,
+        memory=memory
+    )
     # payload = {
     #     "model": "llama-3.1-sonar-small-128k-online",
     #     "messages": [
@@ -129,9 +134,9 @@ def Preplexity_response(text):
     #     #print("Assistant's reply:", answer)
     # else:
     #     logger.error("Error:", response.status_code, response.text)
-    response = chain.invoke({"input": f"{text}"})
+    response = chain.predict(input=text)
     if response:
-        return response.content
+        return response
     else:
         logger.error("Error", response.text)
 
