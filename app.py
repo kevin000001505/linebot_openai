@@ -1,4 +1,3 @@
-
 from flask import Flask, request, abort
 from linebot.models import TextMessage, AudioMessage, ImageMessage
 from linebot import (
@@ -162,7 +161,7 @@ def handle_message(event):
     memory = ConversationBufferWindowMemory(k=5)
     if isinstance(event.message, ImageMessage):
         logger.info("Received Image message")
-        
+
         pass
     if isinstance(event.message, TextMessage):
         logger.info(f"Received message: {event.message.text}")
