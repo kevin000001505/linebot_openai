@@ -121,12 +121,7 @@ def Preplexity_response(text):
     chain = prompt | chat
     chat_history = ChatMessageHistory()
     chat_history.add_user_message(text)
-    response = chat_history.invoke(
-        {
-            "messages": chat_history.messages,
-        }
-    )
-    chat_history.add_ai_message(response)
+    
     # chain = LLMChain(
     #     llm=chat,
     #     prompt=prompt,
@@ -169,6 +164,12 @@ def Preplexity_response(text):
     try:
         # response = conversation_with_summary.invoke({"input": text})
         # response = chain.invoke(input=text)
+        response = chat_history.invoke(
+        {
+            "messages": chat_history.messages,
+        }
+        )
+        chat_history.add_ai_message(response)
         logger.info(f"Response: {response}")
         return response['response']
     except Exception as e:
