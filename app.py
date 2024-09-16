@@ -11,10 +11,7 @@ from linebot.models import *
 #======langchain的函數庫==========
 from langchain_community.chat_models import ChatPerplexity
 from langchain import OpenAI
-from langchain.chains import LLMChain
 from langchain.chains import ConversationChain
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 #======langchain的函數庫==========
