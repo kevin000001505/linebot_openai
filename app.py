@@ -56,38 +56,13 @@ chat = ChatPerplexity(
     max_tokens=2048,
 )
 
-rephrase_llm = OpenAI(
-    api_key=openai.api_key,  # 替換為您的 OpenAI API 金鑰
-    model_name="gpt-4o-mini",
-    temperature=0.2,
-    max_tokens=2048,
-)
-
 prompt = ChatPromptTemplate.from_template("""
-    You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
+You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
-    {history}
+{history}
 
-    User: {input}
-    Assistant:
-""")
-
-rephrase_conversation = ConversationChain(
-    llm=chat,
-    prompt=prompt,
-    memory=ConversationBufferWindowMemory(k=5),
-    verbose=True,
-)
-
-rephrase_prompt = ChatPromptTemplate.from_template("""
-    根據以下對話歷史和用戶訊息，請重新表述用戶的問題，使其更清晰易懂。
-
-    對話歷史：
-    {history}
-
-    用戶訊息：{input}
-
-    重新表述後的用戶訊息：
+User: {input}
+Assistant:
 """)
 
 conversation_with_summary = ConversationChain(
@@ -95,18 +70,7 @@ conversation_with_summary = ConversationChain(
     prompt=prompt,
     memory=ConversationBufferWindowMemory(k=5),
     verbose=True,
-)
-def rephrase_user_input(text, history):
-    try:
-        rephrase_response = rephrase_conversation.invoke({
-            "history": history,
-            "input": text
-        })
-        logger.info(f"Rephrased Input: {rephrase_response}")
-        return rephrase_response['response']
-    except Exception as e:
-        logger.error(f"Error during rephrasing: {e}")
-        return text  # 如果重新表述失敗，回傳原始輸入
+    )
 
 def transcribe_audio(file_path):
     logger.info(f"Starting transcription for file: {file_path}")
@@ -143,25 +107,12 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
-    """
-    獲取 ChatPerplexity 的回應，先重新表述用戶輸入。
-    
-    :param text: 用戶輸入
-    :return: AI 回應
-    """
     try:
-        # 獲取當前的對話歷史
-        history = conversation_with_summary.memory.get_history()
-        
-        # 使用 OpenAI 的 LLM 重新表述用戶的輸入
-        rephrased_text = rephrase_user_input(text, history)
-        
-        # 使用重新表述後的輸入獲取回應
-        response = conversation_with_summary.invoke({"input": rephrased_text})
+        response = conversation_with_summary.invoke({"input": text})
         logger.info(f"Response: {response}")
         return response['response']
     except Exception as e:
-        logger.error(f"運行對話鏈時出錯: {e}")
+        logger.error(f"Error running the chain: {e}")
         return None
 
 def Further_question(text):
