@@ -10,7 +10,7 @@ from linebot.models import *
 
 #======langchain的函數庫==========
 from langchain_community.chat_models import ChatPerplexity
-from langchain import OpenAI
+from langchain.llms import OpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
@@ -18,12 +18,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 #======python的函數庫==========
 import tempfile, os
-import json
 import logging
-import requests
-import datetime
 import openai
-import time
 import traceback
 #======python的函數庫==========
 
@@ -138,7 +134,6 @@ def callback():
 # 處理訊息
 @handler.add(MessageEvent, message=(TextMessage, AudioMessage, ImageMessage))
 def handle_message(event):
-    memory = ConversationBufferWindowMemory(k=5)
     if isinstance(event.message, ImageMessage):
         logger.info("Received Image message")
 
