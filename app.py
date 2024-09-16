@@ -50,6 +50,22 @@ headers = {
     "Authorization": f"Bearer {Preplexity_API_KEY}",
     "Content-Type": "application/json"
 }
+# Perplexity chatbot prompt
+chat = ChatPerplexity(
+    temperature=0.2,
+    model="llama-3.1-sonar-small-128k-online",
+    pplx_api_key=Preplexity_API_KEY,
+    max_tokens=2048,
+)
+
+prompt = ChatPromptTemplate.from_template("""
+You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
+
+{history}
+
+User: {input}
+Assistant:
+""")
 
 def transcribe_audio(file_path):
     logger.info(f"Starting transcription for file: {file_path}")
@@ -86,22 +102,6 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
-    #Preplexity chatbot
-    chat = ChatPerplexity(
-        temperature=0.2,
-        model="llama-3.1-sonar-small-128k-online",
-        pplx_api_key=Preplexity_API_KEY,
-        max_tokens=2048,
-    )
-
-    prompt = ChatPromptTemplate.from_template("""
-    You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
-
-    {history}
-
-    User: {input}
-    Assistant:
-    """)
     conversation_with_summary = ConversationChain(
         llm=chat,
         prompt=prompt,
