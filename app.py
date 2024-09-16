@@ -84,7 +84,6 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
-    memory = ConversationBufferWindowMemory(k=5)
     #Preplexity chatbot
     chat = ChatPerplexity(
         temperature=0.2,
@@ -94,17 +93,17 @@ def Preplexity_response(text):
     )
     
     prompt = ChatPromptTemplate.from_template("""
-        You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
+    You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
-        {history}
+    {history}
 
-        User: {input}
-        Assistant:
-        """)
+    User: {input}
+    Assistant:
+    """)
     conversation_with_summary = ConversationChain(
         llm=chat,
         prompt=prompt,
-        memory=memory,
+        memory=ConversationBufferWindowMemory(k=5),
         verbose=True
         )
     # chain = LLMChain(
