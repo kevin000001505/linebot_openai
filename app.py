@@ -107,11 +107,11 @@ def Preplexity_response(text):
         memory=memory,
         verbose=True
         )
-    chain = LLMChain(
-        llm=chat,
-        prompt=prompt,
-        memory=memory
-    )
+    # chain = LLMChain(
+    #     llm=chat,
+    #     prompt=prompt,
+    #     memory=memory
+    # )
     # payload = {
     #     "model": "llama-3.1-sonar-small-128k-online",
     #     "messages": [
@@ -147,7 +147,7 @@ def Preplexity_response(text):
     # else:
     #     logger.error("Error:", response.status_code, response.text)
     try:
-        response = conversation_with_summary.run(input=text)
+        response = conversation_with_summary.invoke(input=text)
         # response = chain.invoke(input=text)
         logger.info(f"Response: {response}")
         return response
