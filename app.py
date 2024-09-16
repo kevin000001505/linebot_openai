@@ -92,11 +92,13 @@ def Preplexity_response(text):
         pplx_api_key=Preplexity_API_KEY,
         max_tokens=2048,
     )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Be precise and concise. Please respond in traditional Chinese (繁體中文)."),
-        ("history", "{history}"),
-        ("human", "{input}")
-    ])
+    prompt = ChatPromptTemplate.from_template("""
+    Be precise and concise. Please respond in traditional Chinese (繁體中文).
+
+    {history}
+
+    {input}
+    """)
     chain = LLMChain(
         llm=chat,
         prompt=prompt,
@@ -138,13 +140,11 @@ def Preplexity_response(text):
     #     logger.error("Error:", response.status_code, response.text)
     try:
         response = chain.run(input=text)
-        logger.info(response)
-    except Exception as e:
-        logger.error(e)
-    if response:
+        logger.info(f"Response: {response}")
         return response
-    else:
-        logger.error("Error", response.text)
+    except Exception as e:
+        logger.error(f"Error running the chain: {e}")
+        return None
 
 def Further_question(text):
 
