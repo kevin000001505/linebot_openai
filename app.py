@@ -69,6 +69,7 @@ conversation_with_summary = ConversationChain(
     )
 
 def transcribe_audio(file_path):
+    """Transcribe Audio message to text for LLM."""
     logger.info(f"Starting transcription for file: {file_path}")
     if not os.path.exists(file_path):
         error_msg = f"Error: The file {file_path} does not exist."
@@ -90,7 +91,7 @@ def transcribe_audio(file_path):
         return f"轉錄時發生意外錯誤：{str(e)}"
 
 def GPT_response(text):
-    # 接收回應
+    """Generate GPT response."""
     response = openai.ChatCompletion.create(
         model="gpt-4o-mini", 
         messages=[{"role": "user", "content": text}], 
@@ -111,7 +112,12 @@ def Preplexity_response(text):
         logger.error(f"Error running the chain: {e}")
         return None
 
+def rephrase_user_message(text):
+    """Rephrase user message based on previous message so that LLM can better understand."""
+    return None
+
 def Further_question(text):
+    """Provide user further questions to ask."""
 
     return None
 # 監聽所有來自 /callback 的 Post Request
