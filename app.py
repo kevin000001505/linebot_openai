@@ -147,7 +147,7 @@ def Preplexity_response(text):
     # else:
     #     logger.error("Error:", response.status_code, response.text)
     try:
-        response = conversation_with_summary.invoke(input=text)
+        response = conversation_with_summary.invoke({"input": text})
         # response = chain.invoke(input=text)
         logger.info(f"Response: {response}")
         return response['response']
