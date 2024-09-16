@@ -67,6 +67,13 @@ User: {input}
 Assistant:
 """)
 
+conversation_with_summary = ConversationChain(
+    llm=chat,
+    prompt=prompt,
+    memory=ConversationBufferWindowMemory(k=5),
+    verbose=True,
+    )
+
 def transcribe_audio(file_path):
     logger.info(f"Starting transcription for file: {file_path}")
     if not os.path.exists(file_path):
@@ -102,12 +109,6 @@ def GPT_response(text):
     return answer
 
 def Preplexity_response(text):
-    conversation_with_summary = ConversationChain(
-        llm=chat,
-        prompt=prompt,
-        memory=ConversationBufferWindowMemory(k=5),
-        verbose=True,
-        )
     try:
         response = conversation_with_summary.invoke({"input": text})
         logger.info(f"Response: {response}")
