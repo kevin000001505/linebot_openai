@@ -114,23 +114,19 @@ def Preplexity_response(text):
                 "system",
                 "You are a helpful assistant. Please respond in traditional Chinese (繁體中文).",
             ),
-            ("placeholder", "{chat_history}"),
-            ("human", "{input}"),
+            ("placeholder", "{messages}"),
         ]
     )
 
     chain = prompt | chat
     chat_history = ChatMessageHistory()
-    chain_with_message_history = RunnableWithMessageHistory(
-        chain,
-        lambda session_id: chat_history,
-        input_messages_key="input",
-        history_messages_key="chat_history",
+    chat_history.add_user_message(text)
+    response = chat_history.invoke(
+        {
+            "messages": chat_history.messages,
+        }
     )
-    response = chain_with_message_history.invoke(
-        {"input": "Translate this sentence from English to French: I love programming."},
-        {"configurable": {"session_id": "unused"}},
-    )
+    chat_history.add_ai_message(response)
     # chain = LLMChain(
     #     llm=chat,
     #     prompt=prompt,
