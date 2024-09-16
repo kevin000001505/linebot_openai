@@ -150,7 +150,7 @@ def Preplexity_response(text):
         response = conversation_with_summary.invoke(input=text)
         # response = chain.invoke(input=text)
         logger.info(f"Response: {response}")
-        return response
+        return response['response']
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
         return None
