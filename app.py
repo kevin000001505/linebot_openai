@@ -95,80 +95,21 @@ def Preplexity_response(text):
     )
 
     prompt = ChatPromptTemplate.from_template("""
-        You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
+    You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
-        {history}
+    {history}
 
-        User: {input}
-        Assistant:
+    User: {input}
+    Assistant:
     """)
     conversation_with_summary = ConversationChain(
         llm=chat,
         prompt=prompt,
         memory=ConversationBufferWindowMemory(k=5),
-        verbose=True
+        verbose=True,
         )
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a helpful assistant. Please respond in traditional Chinese (繁體中文).",
-            ),
-            ("placeholder", "{messages}"),
-        ]
-    )
-
-    chain = prompt | chat
-    chat_history = ChatMessageHistory()
-    chat_history.add_user_message(text)
-    # chain = LLMChain(
-    #     llm=chat,
-    #     prompt=prompt,
-    #     memory=memory
-    # )
-    # payload = {
-    #     "model": "llama-3.1-sonar-small-128k-online",
-    #     "messages": [
-    #         {
-    #             "role": "system",
-    #             "content": "Be precise and concise. Please respond in traditional Chinese (繁體中文)."
-    #         },
-    #         {
-    #             "role": "user",
-    #             "content": f"{text}"
-    #         }
-    #     ],
-    #     "max_tokens": 4096,
-    #     "temperature": 0.2,
-    #     "top_p": 0.9,
-    #     "return_citations": True,
-    #     "search_domain_filter": ["perplexity.ai"],
-    #     "return_images": True,
-    #     "return_related_questions": True,
-    #     "search_recency_filter": "month",
-    #     "top_k": 0,
-    #     "stream": False,
-    #     "presence_penalty": 0,
-    #     "frequency_penalty": 1
-    # }
-    # response = requests.request("POST", url, json=payload, headers=headers)
-    # if response.status_code == 200:
-    #     # Parse the JSON response
-    #     result = response.json()
-    #     # Extract the assistant's reply
-    #     answer = result['choices'][0]['message']['content']
-    #     #print("Assistant's reply:", answer)
-    # else:
-    #     logger.error("Error:", response.status_code, response.text)
     try:
-        # response = conversation_with_summary.invoke({"input": text})
-        # response = chain.invoke(input=text)
-        response = chain.invoke(
-        {
-            "messages": chat_history.messages,
-        }
-        )
-        chat_history.add_ai_message(response)
+        response = conversation_with_summary.invoke({"input": text})
         logger.info(f"Response: {response}")
         return response['response']
     except Exception as e:
