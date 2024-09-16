@@ -12,6 +12,8 @@ from linebot.models import *
 from langchain_community.chat_models import ChatPerplexity
 from langchain.chains import LLMChain
 from langchain.chains import ConversationChain
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 #======langchain的函數庫==========
@@ -91,7 +93,7 @@ def Preplexity_response(text):
         pplx_api_key=Preplexity_API_KEY,
         max_tokens=2048,
     )
-    
+
     prompt = ChatPromptTemplate.from_template("""
         You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
@@ -106,6 +108,29 @@ def Preplexity_response(text):
         memory=ConversationBufferWindowMemory(k=5),
         verbose=True
         )
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a helpful assistant. Please respond in traditional Chinese (繁體中文).",
+            ),
+            ("placeholder", "{chat_history}"),
+            ("human", "{input}"),
+        ]
+    )
+
+    chain = prompt | chat
+    chat_history = ChatMessageHistory()
+    chain_with_message_history = RunnableWithMessageHistory(
+        chain,
+        lambda session_id: chat_history,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+    )
+    response = chain_with_message_history.invoke(
+        {"input": "Translate this sentence from English to French: I love programming."},
+        {"configurable": {"session_id": "unused"}},
+    )
     # chain = LLMChain(
     #     llm=chat,
     #     prompt=prompt,
@@ -146,7 +171,7 @@ def Preplexity_response(text):
     # else:
     #     logger.error("Error:", response.status_code, response.text)
     try:
-        response = conversation_with_summary.invoke({"input": text})
+        # response = conversation_with_summary.invoke({"input": text})
         # response = chain.invoke(input=text)
         logger.info(f"Response: {response}")
         return response['response']
