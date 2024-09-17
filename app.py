@@ -68,6 +68,31 @@ conversation_with_summary = ConversationChain(
     verbose=True,
     )
 
+rephrase_llm = OpenAI(
+    openai_api_key=openai.api_key,
+    model_name="gpt-4o-mini",
+    temperature=0.8,
+    max_tokens=2048,
+)
+
+rephrase_prompt = ChatPromptTemplate.from_template("""
+根據以下對話歷史和用戶訊息，請重新表述用戶的問題，使其更清晰易懂。
+
+對話歷史：
+{history}
+
+用戶訊息：{input}
+
+重新表述後的用戶訊息：
+""")
+
+rephrase_conversation = ConversationChain(
+    llm=rephrase_llm,
+    prompt=rephrase_prompt,
+    memory=ConversationBufferWindowMemory(k=5),
+    verbose=True,
+)
+
 def transcribe_audio(file_path):
     """Transcribe Audio message to text for LLM."""
     logger.info(f"Starting transcription for file: {file_path}")
@@ -105,16 +130,39 @@ def GPT_response(text):
 
 def Preplexity_response(text):
     try:
-        response = conversation_with_summary.invoke({"input": text})
+        history = get_conversation_history(conversation_with_summary.memory)
+        rephrased_text = rephrase_user_input(text, history)
+        response = conversation_with_summary.invoke({"input": rephrased_text})
         logger.info(f"Response: {response}")
         return response['response']
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
         return None
 
-def rephrase_user_message(text):
+def rephrase_user_input(text, history):
     """Rephrase user message based on previous message so that LLM can better understand."""
+    try:
+        rephrase_response = rephrase_conversation.invoke({
+            "history": history,
+            "input": text
+        })
+        logging.info(f"Rephrased Input: {rephrase_response}")
+        return rephrase_response['response']
+    except Exception as e:
+        logging.error(f"重新表述時出錯: {e}")
+        return text  # 如果重新表述失敗，回傳原始輸入
     return None
+
+def get_conversation_history(memory):
+    """
+    從 ConversationBufferWindowMemory 中提取對話歷史，並格式化為文本。
+    
+    :param memory: ConversationBufferWindowMemory 物件
+    :return: 格式化後的對話歷史字符串
+    """
+    # 使用 load_memory_variables 來獲取 'history'
+    memory_vars = memory.load_memory_variables({})
+    return memory_vars.get('history', '')
 
 def Further_question(text):
     """Provide user further questions to ask."""
