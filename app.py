@@ -10,7 +10,7 @@ from linebot.models import *
 
 #======langchain的函數庫==========
 from langchain_community.chat_models import ChatPerplexity
-from langchain.llms import OpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
@@ -68,7 +68,7 @@ conversation_with_summary = ConversationChain(
     verbose=True,
     )
 
-rephrase_llm = OpenAI(
+rephrase_llm = ChatOpenAI(
     openai_api_key=openai.api_key,
     model_name="gpt-4o-mini",
     temperature=0.8,
