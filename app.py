@@ -10,7 +10,7 @@ from linebot.models import *
 
 #======langchain的函數庫==========
 from langchain_community.chat_models import ChatPerplexity
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
