@@ -93,6 +93,24 @@ rephrase_conversation = ConversationChain(
     verbose=True,
 )
 
+further_prompt = ChatPromptTemplate.from_template("""
+根據以下對話歷史和用戶訊息，請提供更多問題給用戶參考提問給 LLM ，讓用戶能知道還能問哪些問題。
+
+對話歷史：
+{history}
+
+用戶訊息：{input}
+
+推薦的問題：
+""")
+
+further_conversation = ConversationChain(
+    llm=rephrase_llm,
+    prompt=further_prompt,
+    memory=ConversationBufferWindowMemory(k=5),
+    verbose=True,
+)
+
 def transcribe_audio(file_path):
     """Transcribe Audio message to text for LLM."""
     logger.info(f"Starting transcription for file: {file_path}")
@@ -134,10 +152,12 @@ def Preplexity_response(text):
         rephrased_text = rephrase_user_input(text, history)
         response = conversation_with_summary.invoke({"input": rephrased_text})
         logger.info(f"Response: {response}")
-        return response['response']
+        further_questions = further_question(text, history)
+        logger.info(f"Further Questions: {further_question}")
+        return response['response'], further_questions['response']
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
-        return None
+        return None, None
 
 def rephrase_user_input(text, history):
     """Rephrase user message based on previous message so that LLM can better understand."""
@@ -164,10 +184,19 @@ def get_conversation_history(memory):
     memory_vars = memory.load_memory_variables({})
     return memory_vars.get('history', '')
 
-def Further_question(text):
+def further_question(text, history):
     """Provide user further questions to ask."""
+    try:
+        further_questions_response = further_conversation.invoke({
+            "history": history,
+            "input": text
+        })
+        logging.info(f"Further questions: {further_questions_response}")
+        return further_questions_response['response']
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return text
 
-    return None
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -220,8 +249,9 @@ def handle_message(event):
                 raise Exception(msg)
             
             # Process the transcribed text
-            Preplexity_answer = Preplexity_response(msg)
+            Preplexity_answer, questions = Preplexity_response(msg)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=Preplexity_answer))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題： {questions}"))
         except Exception as e:
             logger.exception("Error handling audio message:")
             error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
