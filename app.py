@@ -153,7 +153,6 @@ def Preplexity_response(text):
         response = conversation_with_summary.invoke({"input": rephrased_text})
         logger.info(f"Response: {response}")
         further_questions = further_question(text, history)
-        logger.info(f"Further Questions: {further_question}")
         return response['response'], further_questions
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
@@ -191,10 +190,10 @@ def further_question(text, history):
             "history": history,
             "input": text
         })
-        logging.info(f"Further questions: {further_questions_response}")
+        logger.info(f"Further questions: {further_questions_response}")
         return further_questions_response['response']
     except Exception as e:
-        logging.error(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return text
 
 # 監聽所有來自 /callback 的 Post Request
