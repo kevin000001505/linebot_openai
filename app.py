@@ -68,6 +68,7 @@ conversation_with_summary = ConversationChain(
     verbose=True,
     )
 
+# Rephrase prompt
 rephrase_llm = ChatOpenAI(
     openai_api_key=openai.api_key,
     model_name="gpt-4o-mini",
@@ -93,6 +94,7 @@ rephrase_conversation = ConversationChain(
     verbose=True,
 )
 
+# Further questions prompt
 further_prompt = ChatPromptTemplate.from_template("""
 根據以下對話歷史和用戶訊息，請提供更多問題給用戶參考提問給 LLM ，讓用戶能知道還能問哪些問題。
 
@@ -146,14 +148,14 @@ def GPT_response(text):
     answer = response['choices'][0]['message']['content']
     return answer
 
-def Preplexity_response(text):
+def Perplexity_response(text):
+    """Perplexity response."""
     try:
         history = get_conversation_history(conversation_with_summary.memory)
         rephrased_text = rephrase_user_input(text, history)
         response = conversation_with_summary.invoke({"input": rephrased_text})
         logger.info(f"Response: {response}")
         further_questions = further_question(text, history)
-        logger.info(f"Further question: {further_questions}")
         return response['response'], further_questions
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
@@ -166,7 +168,7 @@ def rephrase_user_input(text, history):
             "history": history,
             "input": text
         })
-        logging.info(f"Rephrased Input: {rephrase_response}")
+        logger.info(f"Rephrased Input: {rephrase_response}")
         return rephrase_response['response']
     except Exception as e:
         logging.error(f"重新表述時出錯: {e}")
@@ -191,7 +193,7 @@ def further_question(text, history):
             "history": history,
             "input": text
         })
-        # logger.info(f"Further questions: {further_questions_response}")
+        logger.info(f"Further questions: {further_questions_response}")
         return further_questions_response['response']
     except Exception as e:
         logger.error(f"Error: {e}")
@@ -226,14 +228,12 @@ def handle_message(event):
         msg = event.message.text
         try:
             # GPT_answer = GPT_response(msg)
-            Preplexity_answer, questions = Preplexity_response(msg)
+            Preplexity_answer, questions = Perplexity_response(msg)
             messages = [
                 TextSendMessage(text=Preplexity_answer),
                 TextSendMessage(text=f"更多可參考的問題：\n{questions}")
             ]
             line_bot_api.reply_message(event.reply_token, messages)
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題：\n{questions}"))
         except:
             logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
@@ -255,14 +255,12 @@ def handle_message(event):
                 raise Exception(msg)
             
             # Process the transcribed text
-            Preplexity_answer, questions = Preplexity_response(msg)
+            Preplexity_answer, questions = Perplexity_response(msg)
             messages = [
                 TextSendMessage(text=Preplexity_answer),
                 TextSendMessage(text=f"更多可參考的問題：\n{questions}")
             ]
             line_bot_api.reply_message(event.reply_token, messages)
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=Preplexity_answer))
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題：\n{questions}"))
         except Exception as e:
             logger.exception("Error handling audio message:")
             error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
