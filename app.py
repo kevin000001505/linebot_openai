@@ -226,8 +226,9 @@ def handle_message(event):
         msg = event.message.text
         try:
             # GPT_answer = GPT_response(msg)
-            Preplexity_answer = Preplexity_response(msg)
+            Preplexity_answer, questions = Preplexity_response(msg)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題： {questions}"))
         except:
             logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
