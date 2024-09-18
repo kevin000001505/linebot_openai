@@ -154,7 +154,7 @@ def Preplexity_response(text):
         logger.info(f"Response: {response}")
         further_questions = further_question(text, history)
         logger.info(f"Further Questions: {further_question}")
-        return response['response'], further_questions['response']
+        return response['response'], further_questions
     except Exception as e:
         logger.error(f"Error running the chain: {e}")
         return None, None
