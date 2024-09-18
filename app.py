@@ -227,7 +227,7 @@ def handle_message(event):
             # GPT_answer = GPT_response(msg)
             Preplexity_answer, questions = Preplexity_response(msg)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(Preplexity_answer))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題： {questions}"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題：\n{questions}"))
         except:
             logger.exception(traceback.format_exc())
             line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
@@ -251,7 +251,7 @@ def handle_message(event):
             # Process the transcribed text
             Preplexity_answer, questions = Preplexity_response(msg)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=Preplexity_answer))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題： {questions}"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"更多可參考的問題：\n{questions}"))
         except Exception as e:
             logger.exception("Error handling audio message:")
             error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
