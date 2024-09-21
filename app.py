@@ -216,61 +216,68 @@ def callback():
     return 'OK'
 
 
-# 處理訊息
-@handler.add(MessageEvent, message=(TextMessage, AudioMessage, ImageMessage))
-def handle_message(event):
-    if isinstance(event.message, ImageMessage):
-        logger.info("Received Image message")
+# 處理文本訊息
+@handler.add(MessageEvent, message=TextMessage)
+def handle_text_message(event):
+    logger.info(f"Received message: {event.message.text}")
+    msg = event.message.text
+    try:
+        # GPT_answer = GPT_response(msg)
+        Preplexity_answer, questions = Perplexity_response(msg)
+        messages = [
+            TextSendMessage(text=Preplexity_answer),
+            TextSendMessage(text=f"更多可參考的問題：\n{questions}")
+        ]
+        line_bot_api.reply_message(event.reply_token, messages)
+    except Exception as e:
+        logger.exception(traceback.format_exc())
+        line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息')
+        )
 
-        pass
-    if isinstance(event.message, TextMessage):
-        logger.info(f"Received message: {event.message.text}")
-        msg = event.message.text
-        try:
-            # GPT_answer = GPT_response(msg)
-            Preplexity_answer, questions = Perplexity_response(msg)
-            messages = [
-                TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=f"更多可參考的問題：\n{questions}")
-            ]
-            line_bot_api.reply_message(event.reply_token, messages)
-        except:
-            logger.exception(traceback.format_exc())
-            line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
-    elif isinstance(event.message, AudioMessage):
-        audio_content = line_bot_api.get_message_content(event.message.id)
-        if not audio_content:
-            logger.error("No audio content found.")
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法獲取音訊內容。'))
-            return
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.m4a') as tf:
-                for chunk in audio_content.iter_content():
-                    tf.write(chunk)
-                tempfile_path = tf.name
-                logger.info(f"Audio saved to temporary file: {tempfile_path}")
-            
-            msg = transcribe_audio(tempfile_path)
-            if msg.startswith("Error"):
-                raise Exception(msg)
-            
-            # Process the transcribed text
-            Preplexity_answer, questions = Perplexity_response(msg)
-            messages = [
-                TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=f"更多可參考的問題：\n{questions}")
-            ]
-            line_bot_api.reply_message(event.reply_token, messages)
-        except Exception as e:
-            logger.exception("Error handling audio message:")
-            error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_message))
-        finally:
-            # Clean up the temporary file
-            if os.path.exists(tempfile_path):
-                os.remove(tempfile_path)
-                logger.info(f"Temporary file {tempfile_path} deleted.")
+# 處理音訊訊息
+@handler.add(MessageEvent, message=AudioMessage)
+def handle_audio_message(event):
+    audio_content = line_bot_api.get_message_content(event.message.id)
+    if not audio_content:
+        logger.error("No audio content found.")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法獲取音訊內容。'))
+        return
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.m4a') as tf:
+            for chunk in audio_content.iter_content():
+                tf.write(chunk)
+            tempfile_path = tf.name
+            logger.info(f"Audio saved to temporary file: {tempfile_path}")
+        
+        msg = transcribe_audio(tempfile_path)
+        if msg.startswith("Error"):
+            raise Exception(msg)
+        
+        # Process the transcribed text
+        Preplexity_answer, questions = Perplexity_response(msg)
+        messages = [
+            TextSendMessage(text=Preplexity_answer),
+            TextSendMessage(text=f"更多可參考的問題：\n{questions}")
+        ]
+        line_bot_api.reply_message(event.reply_token, messages)
+    except Exception as e:
+        logger.exception("Error handling audio message:")
+        error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_message))
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(tempfile_path):
+            os.remove(tempfile_path)
+            logger.info(f"Temporary file {tempfile_path} deleted.")
 
+# 處理圖片訊息
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_image_message(event):
+    logger.info("Received Image message")
+    # Add your image processing logic here
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text='圖片已收到。'))
 @handler.add(PostbackEvent)
 def handle_message(event):
     print(event.postback.data)
@@ -284,8 +291,8 @@ def welcome(event):
     name = profile.display_name
     message = TextSendMessage(text=f'{name}歡迎加入')
     line_bot_api.reply_message(event.reply_token, message)
-        
-import os
+
+
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting server on port {port}")
