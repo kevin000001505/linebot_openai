@@ -18,6 +18,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 #======python的函數庫==========
 import tempfile, os
+import base64
+import requests
 import logging
 import openai
 import traceback
@@ -199,6 +201,43 @@ def further_question(text, history):
         logger.error(f"Error: {e}")
         return text
 
+def encode_image(image_path):
+  # Function to encode the image
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+    
+def Image_recognize(image_base64):
+
+    headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {openai.api_key}"
+    }
+
+    payload = {
+    "model": "gpt-4o",
+    "messages": [
+        {
+        "role": "user",
+        "content": [
+            {
+            "type": "text",
+            "text": "What’s in this image?"
+            },
+            {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image_base64}"
+            }
+            }
+        ]
+        }
+    ],
+    "max_tokens": 300
+    }
+
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    return response.json()['choices'][0]['message']['content']
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -277,7 +316,11 @@ def handle_audio_message(event):
 def handle_image_message(event):
     logger.info("Received Image message")
     # Add your image processing logic here
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text='圖片已收到。'))
+    message_content = line_bot_api.get_message_content(event.message.id)
+    image_base64 = base64.b64encode(message_content.content).decode('utf-8')
+    description = Image_recognize(image_base64)
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'圖片描述：{description}'))
+
 @handler.add(PostbackEvent)
 def handle_message(event):
     print(event.postback.data)

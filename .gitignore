@@ -14,3 +14,5 @@ __pycache__/
 # Environment variables
 .env
 *.ipynb
+*.jpg
+*.jpeg
