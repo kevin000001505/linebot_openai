@@ -16,6 +16,12 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 #======langchain的函數庫==========
 
+
+#======自訂的函數庫==========
+from message_response import Message_Response
+#======自訂的函數庫==========
+
+
 #======python的函數庫==========
 import tempfile, os
 import base64
@@ -40,12 +46,14 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 # Preplexity API key
 Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
 # Preplexity URL
-url = "https://api.perplexity.ai/chat/completions"
+# url = "https://api.perplexity.ai/chat/completions"
 # Set up the headers
-headers = {
-    "Authorization": f"Bearer {Preplexity_API_KEY}",
-    "Content-Type": "application/json"
-}
+# headers = {
+#     "Authorization": f"Bearer {Preplexity_API_KEY}",
+#     "Content-Type": "application/json"
+# }
+
+msg_response = Message_Response()
 # Perplexity chatbot prompt
 chat = ChatPerplexity(
     temperature=0.2,
@@ -175,7 +183,7 @@ def rephrase_user_input(text, history):
     except Exception as e:
         logging.error(f"重新表述時出錯: {e}")
         return text  # 如果重新表述失敗，回傳原始輸入
-    return None
+
 
 def get_conversation_history(memory):
     """
