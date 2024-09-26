@@ -42,16 +42,9 @@ line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 # Channel Secret
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 # OPENAI API Key初始化設定
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# openai.api_key = os.getenv('OPENAI_API_KEY')
 # Preplexity API key
-Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
-# Preplexity URL
-# url = "https://api.perplexity.ai/chat/completions"
-# Set up the headers
-# headers = {
-#     "Authorization": f"Bearer {Preplexity_API_KEY}",
-#     "Content-Type": "application/json"
-# }
+# Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
 
 # Initialize the Message_Response class
 msg_response = Message_Response()
