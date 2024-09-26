@@ -150,10 +150,6 @@ class Message_Response:
                 transcript = openai.Audio.transcribe("whisper-1", audio_file)
             logger.info("Transcription successful.")
             return transcript.get("text", "無法獲取轉錄文本。")
-        except openai.error.OpenAIError as e:
-            error_msg = f"OpenAI API error during transcription: {str(e)}"
-            logger.error(error_msg)
-            return f"轉錄時發生錯誤：{str(e)}"
         except Exception as e:
             error_msg = f"Unexpected error during transcription: {str(e)}"
             logger.error(error_msg)
