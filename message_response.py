@@ -3,6 +3,7 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
+from openai import OpenAI
 import os
 import logging
 import openai
@@ -140,6 +141,7 @@ class Message_Response:
     def transcribe_audio(self, file_path):
         """Transcribe Audio message to text for LLM."""
         logger.info(f"Starting transcription for file: {file_path}")
+        client = OpenAI()
         if not os.path.exists(file_path):
             error_msg = f"Error: The file {file_path} does not exist."
             logger.error(error_msg)
@@ -147,9 +149,11 @@ class Message_Response:
 
         try:
             with open(file_path, "rb") as audio_file:
-                transcript = openai.Audio.transcribe("whisper-1", audio_file)
+                transcript = client.audio.transcriptions.create(file=audio_file, model="whisper-1")
+                # transcript = openai.Audio.transcribe("whisper-1", audio_file)
             logger.info("Transcription successful.")
-            return transcript.get("text", "無法獲取轉錄文本。")
+            # return transcript.get("text", "無法獲取轉錄文本。")
+            return transcript.text
         except Exception as e:
             error_msg = f"Unexpected error during transcription: {str(e)}"
             logger.error(error_msg)
