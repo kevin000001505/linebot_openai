@@ -147,7 +147,7 @@ class Message_Response:
 
         try:
             with open(file_path, "rb") as audio_file:
-                transcript = openai.OpenAI.audio.transcriptions.create("whisper-1", audio_file)
+                transcript = openai.Audio.transcribe("whisper-1", audio_file)
             logger.info("Transcription successful.")
             return transcript.get("text", "無法獲取轉錄文本。")
         except openai.error.OpenAIError as e:
