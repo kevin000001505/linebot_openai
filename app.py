@@ -60,7 +60,7 @@ def handle_text_message(event):
     msg = event.message.text
     if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
         question_index = int(msg) - 1
-        logger.info(last_questions) # Test
+        logger.debug(last_questions) # Test
         select_question = last_questions[question_index]
         try:
             Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
@@ -71,17 +71,17 @@ def handle_text_message(event):
             ]
             messages = [
                 TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=last_questions),
+                TextSendMessage(text=new_questions),
                 TextSendMessage(
                     text="選擇一個問題編號來獲取更多信息：",
                     quick_reply=QuickReply(items=quick_reply_buttons)
                 )
             ]
-            logger.info(f"Reply Message:{messages}")
+            logger.debug(f"Reply Message:{messages}")
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(traceback.format_exc())
-            logger.info(e)
+            logger.error(e)
             line_bot_api.reply_message(
                 event.reply_token, 
                 TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
@@ -109,7 +109,7 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(traceback.format_exc())
-            logger.info(e)
+            logger.error(e)
             line_bot_api.reply_message(
                 event.reply_token, 
                 TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
