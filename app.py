@@ -67,64 +67,85 @@ def create_quick_reply_buttons(questions):
 def handle_text_message(event):
     global last_questions
     msg = event.message.text
-    if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
-        question_index = int(msg) - 1
-        logger.debug(last_questions) # Test
-        select_question = last_questions[question_index]
+    user_id = event.source.user_id
+
+    # Check if there's a stored image for this user
+    temp_image_path = msg_response.get_temp_image(user_id)
+    
+    if temp_image_path:
         try:
-            Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
-            last_questions = new_questions.split('\n')
-
-            quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-            # Create a numbered list of questions
-            question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
-
-            messages = [
-                TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
-                TextSendMessage(
-                    text="選擇一個問題編號來獲取更多信息：",
-                    quick_reply=QuickReply(items=quick_reply_buttons)
-                )
-            ]
-            logger.debug(f"Reply Message:{messages}")
-            line_bot_api.reply_message(event.reply_token, messages)
+            # Process the image with the additional information
+            response = msg_response.process_image_with_info(temp_image_path, msg)
+            
+            # Clear the stored image path
+            msg_response.clear_temp_image(user_id)
+            
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
         except Exception as e:
-            logger.exception(traceback.format_exc())
-            logger.error(e)
+            logger.exception(f"Error processing image with info: {e}")
             line_bot_api.reply_message(
-                event.reply_token, 
+                event.reply_token,
                 TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
             )
-    elif msg == '0':
-        msg_response.clear_memory()
     else:
-        try:
-            Preplexity_answer, questions = msg_response.Perplexity_response(msg)
-            last_questions = questions.split('\n')  # Store the questions for later use
+        if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
+            question_index = int(msg) - 1
+            logger.debug(last_questions) # Test
+            select_question = last_questions[question_index]
+            try:
+                Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
+                last_questions = new_questions.split('\n')
 
-            quick_reply_buttons = [
-                QuickReplyButton(action=MessageAction(label=str(i+1), text=str(i+1)))
-                for i in range(min(10, len(last_questions)))
-            ]
+                quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
-            messages = [
-                TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=questions),
-                TextSendMessage(
-                    text="選擇一個問題編號來獲取更多信息：",
-                    quick_reply=QuickReply(items=quick_reply_buttons)
+                # Create a numbered list of questions
+                question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+
+                messages = [
+                    TextSendMessage(text=Preplexity_answer),
+                    TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+                    TextSendMessage(
+                        text="選擇一個問題編號來獲取更多信息：",
+                        quick_reply=QuickReply(items=quick_reply_buttons)
+                    )
+                ]
+                logger.debug(f"Reply Message:{messages}")
+                line_bot_api.reply_message(event.reply_token, messages)
+            except Exception as e:
+                logger.exception(traceback.format_exc())
+                logger.error(e)
+                line_bot_api.reply_message(
+                    event.reply_token, 
+                    TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
                 )
-            ]
-            line_bot_api.reply_message(event.reply_token, messages)
-        except Exception as e:
-            logger.exception(traceback.format_exc())
-            logger.error(e)
-            line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
-            )
+        elif msg == '0':
+            msg_response.clear_memory()
+        else:
+            try:
+                Preplexity_answer, questions = msg_response.Perplexity_response(msg)
+                last_questions = new_questions.split('\n')
+
+                quick_reply_buttons = create_quick_reply_buttons(last_questions)
+
+                # Create a numbered list of questions
+                question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+
+                messages = [
+                    TextSendMessage(text=Preplexity_answer),
+                    TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+                    TextSendMessage(
+                        text="選擇一個問題編號來獲取更多信息：",
+                        quick_reply=QuickReply(items=quick_reply_buttons)
+                    )
+                ]
+                line_bot_api.reply_message(event.reply_token, messages)
+            except Exception as e:
+                logger.exception(traceback.format_exc())
+                logger.error(e)
+                line_bot_api.reply_message(
+                    event.reply_token, 
+                    TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
+                )
 
 # 處理音訊訊息
 @handler.add(MessageEvent, message=AudioMessage)
@@ -147,9 +168,20 @@ def handle_audio_message(event):
         
         # Process the transcribed text
         Preplexity_answer, questions = msg_response.Perplexity_response(msg)
+        last_questions = questions.split('\n')
+
+        quick_reply_buttons = create_quick_reply_buttons(last_questions)
+
+        # Create a numbered list of questions
+        question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+
         messages = [
             TextSendMessage(text=Preplexity_answer),
-            TextSendMessage(text=f"更多可參考的問題：\n{questions}")
+            TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+            TextSendMessage(
+                text="選擇一個問題編號來獲取更多信息：",
+                quick_reply=QuickReply(items=quick_reply_buttons)
+            )
         ]
         line_bot_api.reply_message(event.reply_token, messages)
     except Exception as e:
@@ -165,8 +197,24 @@ def handle_audio_message(event):
 # 處理圖片訊息
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
-    logger.info("Received Image message")
     message_content = line_bot_api.get_message_content(event.message.id)
+
+    # Save the image to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_image:
+        for chunk in message_content.iter_content():
+            temp_image.write(chunk)
+        temp_image_path = temp_image.name
+
+    # Store the temporary file path in the user's session
+    user_id = event.source.user_id
+    msg_response.store_temp_image(user_id, temp_image_path)
+
+    # Ask the user for more information
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text="請提供更多關於這張圖片的信息或問題。")
+    )
+
     image_base64 = base64.b64encode(message_content.content).decode('utf-8')
     description = msg_response.Image_recognize(image_base64)
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'圖片描述：{description}'))

@@ -5,6 +5,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
 import os
+import base64
 import logging
 import openai
 import requests
@@ -19,6 +20,7 @@ class Message_Response:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
         openai.api_key = self.openai_api_key
+        self.temp_images = {}
         self.memory = ConversationBufferWindowMemory(k=5)
         self.setup_chat_models()
 
@@ -156,7 +158,24 @@ class Message_Response:
             logger.error(error_msg)
             return f"轉錄時發生意外錯誤：{str(e)}"
 
-    def Image_recognize(self, image_base64) -> str:
+    def get_temp_image(self, user_id):
+        """Get the temporary image path for a user."""
+        return self.temp_images.get(user_id)
+
+    def store_temp_image(self, user_id, image_path):
+        """Store the temporary image path for a user."""
+        self.temp_images[user_id] = image_path
+
+    def clear_temp_image(self, user_id):
+        """Clear the temporary image path for a user."""
+        if user_id in self.temp_images:
+            del self.temp_images[user_id]
+
+    def process_image_with_info(self, image_path, additional_info):
+        """Process the image with additional information using ChatGPT API."""
+        with open(image_path, "rb") as image_file:
+            image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.openai_api_key}"
@@ -170,7 +189,7 @@ class Message_Response:
                     "content": [
                         {
                             "type": "text",
-                            "text": "What's in this image?"
+                            "text": f"Here's an image along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."
                         },
                         {
                             "type": "image_url",
