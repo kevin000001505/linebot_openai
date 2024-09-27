@@ -36,6 +36,7 @@ msg_response = Message_Response()
 
 # global variable to store the questions
 last_questions = []
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -79,8 +80,25 @@ def handle_text_message(event):
             
             # Clear the stored image path
             msg_response.clear_temp_image(user_id)
-            
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
+
+            Preplexity_answer, questions = msg_response.Perplexity_response(f"Provide more information from this object describe:{response}")
+            last_questions = questions.split('\n')
+
+            quick_reply_buttons = create_quick_reply_buttons(last_questions)
+
+            # Create a numbered list of questions
+            question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+
+            messages = [
+                TextSendMessage(text=Preplexity_answer),
+                TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+                TextSendMessage(
+                    text="選擇一個問題編號來獲取更多信息：",
+                    quick_reply=QuickReply(items=quick_reply_buttons)
+                )
+            ]
+            line_bot_api.reply_message(event.reply_token, messages)
+            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
         except Exception as e:
             logger.exception(f"Error processing image with info: {e}")
             line_bot_api.reply_message(
@@ -123,7 +141,7 @@ def handle_text_message(event):
         else:
             try:
                 Preplexity_answer, questions = msg_response.Perplexity_response(msg)
-                last_questions = new_questions.split('\n')
+                last_questions = questions.split('\n')
 
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
