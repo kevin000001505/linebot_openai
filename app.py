@@ -74,10 +74,7 @@ def handle_text_message(event):
         try:
             Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
             last_questions = new_questions.split('\n')
-            quick_reply_buttons = [
-                QuickReplyButton(action=MessageAction(label=str(i+1), text=str(i+1)))
-                for i in range(min(10, len(last_questions)))
-            ]
+            quick_reply_buttons = create_quick_reply_buttons(last_questions)
             messages = [
                 TextSendMessage(text=Preplexity_answer),
                 TextSendMessage(
