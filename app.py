@@ -71,6 +71,7 @@ def handle_text_message(event):
             ]
             messages = [
                 TextSendMessage(text=Preplexity_answer),
+                TextSendMessage(text=last_questions),
                 TextSendMessage(
                     text="選擇一個問題編號來獲取更多信息：",
                     quick_reply=QuickReply(items=quick_reply_buttons)
@@ -97,6 +98,7 @@ def handle_text_message(event):
 
             messages = [
                 TextSendMessage(text=Preplexity_answer),
+                TextSendMessage(text=questions),
                 TextSendMessage(
                     text="選擇一個問題編號來獲取更多信息：",
                     quick_reply=QuickReply(items=quick_reply_buttons)
