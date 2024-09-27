@@ -49,6 +49,8 @@ handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 # Initialize the Message_Response class
 msg_response = Message_Response()
 
+# global variable to store the questions
+last_questions = []
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -70,6 +72,8 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     logger.info(f"Received message: {event.message.text}")
+    if msg.isdigit() and msg == 0:
+        msg_response.clear_memory()
     msg = event.message.text
     try:
         Preplexity_answer, questions = msg_response.Perplexity_response(msg)
@@ -141,7 +145,7 @@ def welcome(event):
     gid = event.source.group_id
     profile = line_bot_api.get_group_member_profile(gid, uid)
     name = profile.display_name
-    message = TextSendMessage(text=f'{name}歡迎加入')
+    message = TextSendMessage(text=f'{name}歡迎加入, 輸入0 來清除之前的歷史對話')
     line_bot_api.reply_message(event.reply_token, message)
 
 

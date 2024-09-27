@@ -24,6 +24,7 @@ class Message_Response:
         self.setup_chat_models()
 
     def setup_chat_models(self):
+        """setup the model and prompt"""
         self.chat = ChatPerplexity(
             temperature=0.2,
             model="llama-3.1-sonar-small-128k-online",
@@ -90,7 +91,7 @@ class Message_Response:
             verbose=True,
         )
 
-    def Perplexity_response(self, text):
+    def Perplexity_response(self, text) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(self.conversation_with_summary.memory)
@@ -103,7 +104,7 @@ class Message_Response:
             logger.error(f"Error running the chain: {e}")
             return None, None
 
-    def get_conversation_history(self, memory):
+    def get_conversation_history(self, memory) -> str:
         """
         從 ConversationBufferWindowMemory 中提取對話歷史，並格式化為文本。
         
@@ -113,7 +114,7 @@ class Message_Response:
         memory_vars = memory.load_memory_variables({})
         return memory_vars.get('history', '')
     
-    def rephrase_user_input(self, text, history):
+    def rephrase_user_input(self, text, history) -> str:
         """Rephrase user message based on previous message so that LLM can better understand."""
         try:
             rephrase_response = self.rephrase_conversation.invoke({
@@ -126,7 +127,7 @@ class Message_Response:
             logging.error(f"重新表述時出錯: {e}")
             return text  # 如果重新表述失敗，回傳原始輸入
     
-    def further_question(self, text, history):
+    def further_question(self, text, history) -> str:
         """Provide user further questions to ask."""
         try:
             further_questions_response = self.further_conversation.invoke({
@@ -139,7 +140,7 @@ class Message_Response:
             logger.error(f"Error: {e}")
             return text
 
-    def transcribe_audio(self, file_path):
+    def transcribe_audio(self, file_path) -> str:
         """Transcribe Audio message to text for LLM."""
         logger.info(f"Starting transcription for file: {file_path}")
         client = OpenAI()
@@ -158,7 +159,7 @@ class Message_Response:
             logger.error(error_msg)
             return f"轉錄時發生意外錯誤：{str(e)}"
 
-    def Image_recognize(self, image_base64):
+    def Image_recognize(self, image_base64) -> str:
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.openai_api_key}"
@@ -188,3 +189,7 @@ class Message_Response:
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
         return response.json()['choices'][0]['message']['content']
+    
+    def clear_memory(self) -> None:
+        """Clear all memory"""
+        self.memory.clear()
