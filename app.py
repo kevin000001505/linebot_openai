@@ -8,15 +8,6 @@ from linebot.exceptions import (
 )
 from linebot.models import *
 
-#======langchain的函數庫==========
-from langchain_community.chat_models import ChatPerplexity
-from langchain_openai import ChatOpenAI
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferWindowMemory
-from langchain_core.prompts import ChatPromptTemplate
-#======langchain的函數庫==========
-
-
 #======自訂的函數庫==========
 from message_response import Message_Response
 #======自訂的函數庫==========
@@ -25,9 +16,7 @@ from message_response import Message_Response
 #======python的函數庫==========
 import tempfile, os
 import base64
-import requests
 import logging
-import openai
 import traceback
 #======python的函數庫==========
 
@@ -41,10 +30,6 @@ static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 # Channel Secret
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
-# OPENAI API Key初始化設定
-# openai.api_key = os.getenv('OPENAI_API_KEY')
-# Preplexity API key
-# Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
 
 # Initialize the Message_Response class
 msg_response = Message_Response()
@@ -71,23 +56,59 @@ def callback():
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
+    global last_questions
     logger.info(f"Received message: {event.message.text}")
-    if msg.isdigit() and msg == 0:
-        msg_response.clear_memory()
     msg = event.message.text
-    try:
-        Preplexity_answer, questions = msg_response.Perplexity_response(msg)
-        messages = [
-            TextSendMessage(text=Preplexity_answer),
-            TextSendMessage(text=f"更多可參考的問題：\n{questions}")
-        ]
-        line_bot_api.reply_message(event.reply_token, messages)
-    except Exception as e:
-        logger.exception(traceback.format_exc())
-        line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息')
-        )
+    if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
+        question_index = int(msg) - 1
+        select_question = last_questions[question_index]
+        try:
+            Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
+            last_questions = new_questions.split('\n')
+            quick_reply_buttons = [
+                QuickReplyButton(action=MessageAction(label=str(i+1), text=str(i+1)))
+                for i in range(min(10, len(last_questions)))
+            ]
+            messages = [
+                TextSendMessage(text=Preplexity_answer),
+                TextSendMessage(
+                    text="選擇一個問題編號來獲取更多信息：",
+                    quick_reply=QuickReply(items=quick_reply_buttons)
+                )
+            ]
+            line_bot_api.reply_message(event.reply_token, messages)
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
+            )
+    elif msg == '0':
+        msg_response.clear_memory()
+    else:
+        try:
+            Preplexity_answer, questions = msg_response.Perplexity_response(msg)
+            last_questions = questions.split('\n')  # Store the questions for later use
+
+            quick_reply_buttons = [
+                QuickReplyButton(action=MessageAction(label=str(i+1), text=str(i+1)))
+                for i in range(min(10, len(last_questions)))
+            ]
+
+            messages = [
+                TextSendMessage(text=Preplexity_answer),
+                TextSendMessage(
+                    text="選擇一個問題編號來獲取更多信息：",
+                    quick_reply=QuickReply(items=quick_reply_buttons)
+                )
+            ]
+            line_bot_api.reply_message(event.reply_token, messages)
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
+            )
 
 # 處理音訊訊息
 @handler.add(MessageEvent, message=AudioMessage)
