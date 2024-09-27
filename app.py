@@ -80,6 +80,7 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(traceback.format_exc())
+            logger.info(e)
             line_bot_api.reply_message(
                 event.reply_token, 
                 TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
@@ -107,6 +108,7 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(traceback.format_exc())
+            logger.info(e)
             line_bot_api.reply_message(
                 event.reply_token, 
                 TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
@@ -139,7 +141,7 @@ def handle_audio_message(event):
         ]
         line_bot_api.reply_message(event.reply_token, messages)
     except Exception as e:
-        logger.exception("Error handling audio message:")
+        logger.exception(f"Error handling audio message:{e}")
         error_message = '處理您的音訊訊息時發生錯誤，請稍後再試。'
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_message))
     finally:
