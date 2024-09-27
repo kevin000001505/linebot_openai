@@ -87,7 +87,7 @@ def handle_text_message(event):
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
             # Create a numbered list of questions
-            question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+            question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
             messages = [
                 TextSendMessage(text=Preplexity_answer),
@@ -98,7 +98,6 @@ def handle_text_message(event):
                 )
             ]
             line_bot_api.reply_message(event.reply_token, messages)
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
         except Exception as e:
             logger.exception(f"Error processing image with info: {e}")
             line_bot_api.reply_message(
