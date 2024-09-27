@@ -55,11 +55,10 @@ def callback():
 
 def create_quick_reply_buttons(questions):
     buttons = []
-    for i in range(questions[:10]):  # Limit to 10 questions
-        # Use only the question number as the label
-        label = f"{i+1}"
+    for index, question in enumerate(questions[:10], start=1):  # Limit to first 10 questions
+        label = f"{index}"
         buttons.append(QuickReplyButton(
-            action=MessageAction(label=label, text=str(i))
+            action=MessageAction(label=label, text=str(index))
         ))
     return buttons
 
@@ -231,10 +230,6 @@ def handle_image_message(event):
         event.reply_token,
         TextSendMessage(text="請提供更多關於這張圖片的信息或問題。")
     )
-
-    image_base64 = base64.b64encode(message_content.content).decode('utf-8')
-    description = msg_response.Image_recognize(image_base64)
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'圖片描述：{description}'))
 
 @handler.add(PostbackEvent)
 def handle_message(event):
