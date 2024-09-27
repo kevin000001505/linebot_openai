@@ -57,10 +57,10 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     global last_questions
-    logger.info(f"Received message: {event.message.text}")
     msg = event.message.text
     if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
         question_index = int(msg) - 1
+        logger.info(last_questions) # Test
         select_question = last_questions[question_index]
         try:
             Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
@@ -77,6 +77,7 @@ def handle_text_message(event):
                     quick_reply=QuickReply(items=quick_reply_buttons)
                 )
             ]
+            logger.info(f"Reply Message:{messages}")
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(traceback.format_exc())

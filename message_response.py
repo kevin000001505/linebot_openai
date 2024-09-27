@@ -74,7 +74,7 @@ class Message_Response:
         )
 
         self.further_prompt = ChatPromptTemplate.from_template("""
-        根據以下對話歷史和用戶訊息，請提供更多問題給用戶參考提問給 LLM ，讓用戶能知道還能問哪些問題。
+        根據以下對話歷史和用戶訊息，請提供10個問題給用戶參考提問給 LLM ，讓用戶能知道還能問哪些問題。
 
         對話歷史：
         {history}
