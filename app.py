@@ -55,9 +55,9 @@ def callback():
 
 def create_quick_reply_buttons(questions):
     buttons = []
-    for i, question in enumerate(questions[:10], 1):  # Limit to 10 questions
+    for i in range(questions[:10]):  # Limit to 10 questions
         # Use only the question number as the label
-        label = f"{i}"
+        label = f"{i+1}"
         buttons.append(QuickReplyButton(
             action=MessageAction(label=label, text=str(i))
         ))
