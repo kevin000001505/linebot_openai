@@ -117,7 +117,7 @@ def handle_text_message(event):
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 # Create a numbered list of questions
-                question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+                question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
                 messages = [
                     TextSendMessage(text=Preplexity_answer),
@@ -146,7 +146,7 @@ def handle_text_message(event):
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 # Create a numbered list of questions
-                question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+                question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
                 messages = [
                     TextSendMessage(text=Preplexity_answer),
@@ -191,7 +191,7 @@ def handle_audio_message(event):
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
         # Create a numbered list of questions
-        question_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(last_questions[:10])])
+        question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
         messages = [
             TextSendMessage(text=Preplexity_answer),
