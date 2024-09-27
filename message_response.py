@@ -20,6 +20,7 @@ class Message_Response:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
         openai.api_key = self.openai_api_key
+        self.memory = ConversationBufferWindowMemory(k=5)
         self.setup_chat_models()
 
     def setup_chat_models(self):
@@ -42,7 +43,7 @@ class Message_Response:
         self.conversation_with_summary = ConversationChain(
             llm=self.chat,
             prompt=self.prompt,
-            memory=ConversationBufferWindowMemory(k=5),
+            memory=self.memory,
             verbose=True,
         )
 
@@ -67,7 +68,7 @@ class Message_Response:
         self.rephrase_conversation = ConversationChain(
             llm=self.rephrase_llm,
             prompt=self.rephrase_prompt,
-            memory=ConversationBufferWindowMemory(k=5),
+            memory=self.memory,
             verbose=True,
         )
 
@@ -85,7 +86,7 @@ class Message_Response:
         self.further_conversation = ConversationChain(
             llm=self.rephrase_llm,
             prompt=self.further_prompt,
-            memory=ConversationBufferWindowMemory(k=5),
+            memory=self.memory,
             verbose=True,
         )
 
@@ -150,9 +151,7 @@ class Message_Response:
         try:
             with open(file_path, "rb") as audio_file:
                 transcript = client.audio.transcriptions.create(file=audio_file, model="whisper-1")
-                # transcript = openai.Audio.transcribe("whisper-1", audio_file)
             logger.info("Transcription successful.")
-            # return transcript.get("text", "無法獲取轉錄文本。")
             return transcript.text
         except Exception as e:
             error_msg = f"Unexpected error during transcription: {str(e)}"
@@ -184,7 +183,7 @@ class Message_Response:
                     ]
                 }
             ],
-            "max_tokens": 300
+            "max_tokens": 1000
         }
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
