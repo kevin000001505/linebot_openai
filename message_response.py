@@ -7,7 +7,6 @@ from openai import OpenAI
 import os
 import logging
 import openai
-import base64
 import requests
 
 logging.basicConfig(level=logging.INFO, 
@@ -121,7 +120,6 @@ class Message_Response:
                 "history": history,
                 "input": text
             })
-            # logger.info(f"Rephrased Input: {rephrase_response}")
             return rephrase_response['response']
         except Exception as e:
             logging.error(f"重新表述時出錯: {e}")
@@ -134,7 +132,6 @@ class Message_Response:
                 "history": history,
                 "input": text
             })
-            # logger.info(f"Further questions: {further_questions_response}")
             return further_questions_response['response']
         except Exception as e:
             logger.error(f"Error: {e}")

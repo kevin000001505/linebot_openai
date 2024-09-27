@@ -52,6 +52,15 @@ def callback():
         abort(400)
     return 'OK'
 
+def create_quick_reply_buttons(questions):
+    buttons = []
+    for i, question in enumerate(questions[:10], 1):  # Limit to 10 questions
+        # Truncate the question if it's too long
+        label = f"{i}. {question[:16]}..." if len(question) > 20 else f"{i}. {question}"
+        buttons.append(QuickReplyButton(
+            action=MessageAction(label=label, text=str(i))
+        ))
+    return buttons
 
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
@@ -71,10 +80,9 @@ def handle_text_message(event):
             ]
             messages = [
                 TextSendMessage(text=Preplexity_answer),
-                TextSendMessage(text=new_questions),
                 TextSendMessage(
-                    text="選擇一個問題編號來獲取更多信息：",
-                    quick_reply=QuickReply(items=quick_reply_buttons)
+                text="選擇一個問題來獲取更多信息：",
+                quick_reply=QuickReply(items=quick_reply_buttons)
                 )
             ]
             logger.debug(f"Reply Message:{messages}")
