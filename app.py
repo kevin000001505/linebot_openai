@@ -86,7 +86,8 @@ def handle_text_message(event):
             last_questions = questions.split("\n")
 
             # Save chat history
-            msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+            # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+            send_message_to_api(user_id, msg, Preplexity_answer)
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
@@ -114,7 +115,8 @@ def handle_text_message(event):
                 # Modify the response that LLM don't need to rephrase it.
                 Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question, rephrase=False)
                 last_questions = new_questions.split('\n')
-                msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+                # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+                send_message_to_api(user_id, msg, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
