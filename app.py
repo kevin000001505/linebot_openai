@@ -84,7 +84,7 @@ def handle_text_message(event):
             Preplexity_answer, questions = msg_response.Perplexity_response(f"Provide more information from this object describe:{response}")
 
             # Split the questions and filter out any empty strings
-            last_questions = questions.split("/n")
+            last_questions = questions.split("\n")
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
