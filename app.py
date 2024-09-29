@@ -55,6 +55,7 @@ def callback():
 
 def create_quick_reply_buttons(questions):
     buttons = []
+    logger.info(questions)
     for index, question in enumerate(questions[:10], start=1):  # Limit to first 10 questions
         label = f"{index}"
         buttons.append(QuickReplyButton(
@@ -83,16 +84,9 @@ def handle_text_message(event):
             Preplexity_answer, questions = msg_response.Perplexity_response(f"Provide more information from this object describe:{response}")
 
             # Split the questions and filter out any empty strings
-            last_questions = [q.strip() for q in questions.split('\n') if q.strip()]
-            logger.info(f"Number of questions: {len(last_questions)}")
+            last_questions = questions.split("/n")
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-            # Create a numbered list of questions
-            question_list = "\n".join([f"{i}. {q}" for i, q in enumerate(last_questions[:10], start=1)])
-
-            # Create a numbered list of questions
-            # question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
             messages = [
                 TextSendMessage(text=Preplexity_answer),
@@ -120,12 +114,9 @@ def handle_text_message(event):
 
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
-                # Create a numbered list of questions
-                question_list = "\n".join([f"{i}" for i in last_questions[:10]])
-
                 messages = [
                     TextSendMessage(text=Preplexity_answer),
-                    TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+                    TextSendMessage(text=f"以下是後續問題：\n"),
                     TextSendMessage(
                         text="選擇一個問題編號來獲取更多信息：",
                         quick_reply=QuickReply(items=quick_reply_buttons)
