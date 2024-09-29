@@ -91,13 +91,16 @@ class Message_Response:
             memory=self.memory,
             verbose=False,
         )
-
-    def Perplexity_response(self, text) -> str:
+    # Modify the function that if False then don't need modify.
+    def Perplexity_response(self, text, rephrase=True) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(self.conversation_with_summary.memory)
-            rephrased_text = self.rephrase_user_input(text, history)
-            response = self.conversation_with_summary.invoke({"input": rephrased_text})
+            if rephrase:
+                rephrased_text = self.rephrase_user_input(text, history)
+                response = self.conversation_with_summary.invoke({"input": rephrased_text})
+            else:
+                response = self.conversation_with_summary.invoke({"input": text})
             logger.info(f"Response: {response}")
             further_questions = self.further_question(text, history)
             return response['response'], further_questions

@@ -109,7 +109,8 @@ def handle_text_message(event):
             logger.debug(last_questions) # Test
             select_question = last_questions[question_index]
             try:
-                Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question)
+                # Modify the response that LLM don't need to rephrase it.
+                Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question, rephrase=False)
                 last_questions = new_questions.split('\n')
 
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
@@ -118,7 +119,7 @@ def handle_text_message(event):
                     TextSendMessage(text=Preplexity_answer),
                     TextSendMessage(text=f"以下是後續問題：\n"),
                     TextSendMessage(
-                        text="選擇一個問題編號來獲取更多信息：",
+                        text="選擇一個問題編號來獲取更多信息",
                         quick_reply=QuickReply(items=quick_reply_buttons)
                     )
                 ]
@@ -133,6 +134,10 @@ def handle_text_message(event):
                 )
         elif msg == '0':
             msg_response.clear_memory()
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextMessage("已刪除歷史紀錄")
+            )
         else:
             try:
                 Preplexity_answer, questions = msg_response.Perplexity_response(msg)
@@ -140,12 +145,9 @@ def handle_text_message(event):
 
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
-                # Create a numbered list of questions
-                question_list = "\n".join([f"{i}" for i in last_questions[:10]])
-
                 messages = [
                     TextSendMessage(text=Preplexity_answer),
-                    TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+                    TextSendMessage(text=f"以下是後續問題：\n{questions}"),
                     TextSendMessage(
                         text="選擇一個問題編號來獲取更多信息：",
                         quick_reply=QuickReply(items=quick_reply_buttons)
@@ -185,14 +187,12 @@ def handle_audio_message(event):
 
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
-        # Create a numbered list of questions
-        question_list = "\n".join([f"{i}" for i in last_questions[:10]])
 
         messages = [
             TextSendMessage(text=Preplexity_answer),
-            TextSendMessage(text=f"以下是後續問題：\n{question_list}"),
+            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
             TextSendMessage(
-                text="選擇一個問題編號來獲取更多信息：",
+                text="選擇一個問題編號來獲取更多信息",
                 quick_reply=QuickReply(items=quick_reply_buttons)
             )
         ]
@@ -239,7 +239,7 @@ def welcome(event):
     gid = event.source.group_id
     profile = line_bot_api.get_group_member_profile(gid, uid)
     name = profile.display_name
-    message = TextSendMessage(text=f'{name}歡迎加入, 輸入0 來清除之前的歷史對話')
+    message = TextSendMessage(text=f'{name}歡迎加入, 輸入 0 來清除之前的歷史對話')
     line_bot_api.reply_message(event.reply_token, message)
 
 
