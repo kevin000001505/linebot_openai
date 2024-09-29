@@ -15,7 +15,6 @@ from message_response import Message_Response
 
 #======python的函數庫==========
 import tempfile, os
-import base64
 import logging
 import traceback
 #======python的函數庫==========
@@ -145,7 +144,7 @@ def handle_text_message(event):
             try:
                 Preplexity_answer, questions = msg_response.Perplexity_response(msg)
                 last_questions = questions.split('\n')
-
+                msg_response.save_chat_history(user_id, msg, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
@@ -188,7 +187,7 @@ def handle_audio_message(event):
         # Process the transcribed text
         Preplexity_answer, questions = msg_response.Perplexity_response(msg)
         last_questions = questions.split('\n')
-
+        
         # Save chat history
         msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
