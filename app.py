@@ -82,9 +82,12 @@ def handle_text_message(event):
             msg_response.clear_temp_image(user_id)
 
             Preplexity_answer, questions = msg_response.Perplexity_response(f"Provide more information from this object describe:{response}")
-
+            
             # Split the questions and filter out any empty strings
             last_questions = questions.split("\n")
+
+            # Save chat history
+            msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
@@ -112,7 +115,7 @@ def handle_text_message(event):
                 # Modify the response that LLM don't need to rephrase it.
                 Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question, rephrase=False)
                 last_questions = new_questions.split('\n')
-
+                msg_response.save_chat_history(user_id, msg, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
@@ -166,6 +169,7 @@ def handle_text_message(event):
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
+    user_id = event.source.user_id
     if not audio_content:
         logger.error("No audio content found.")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法獲取音訊內容。'))
@@ -184,6 +188,9 @@ def handle_audio_message(event):
         # Process the transcribed text
         Preplexity_answer, questions = msg_response.Perplexity_response(msg)
         last_questions = questions.split('\n')
+
+        # Save chat history
+        msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
 

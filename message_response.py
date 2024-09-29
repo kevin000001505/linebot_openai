@@ -5,6 +5,8 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
 import os
+import psycopg2
+from datetime import datetime
 import base64
 import logging
 import openai
@@ -212,3 +214,24 @@ class Message_Response:
     def clear_memory(self) -> None:
         """Clear all memory"""
         self.memory.clear()
+
+    def save_chat_history(self, user_id, message, response):
+        """Save chat history to PostgreSQL database."""
+        try:
+            conn = psycopg2.connect(
+                dbname="airflow",
+                user="airflow",
+                password="airflow",
+                host="postgres"  # This should be the service name of your PostgreSQL container
+            )
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO chat_history (user_id, message, response, timestamp)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, message, response, datetime.now()))
+            conn.commit()
+            cur.close()
+            conn.close()
+            logger.info(f"Chat history saved for user {user_id}")
+        except Exception as e:
+            logger.error(f"Error saving chat history: {e}")
