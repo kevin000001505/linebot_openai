@@ -5,3 +5,4 @@ gunicorn
 langchain
 langchain_community
 langchain-openai
+psycopg2-binary
