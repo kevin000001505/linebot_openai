@@ -4,9 +4,9 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
+from datetime import datetime
 import os
 import psycopg2
-from datetime import datetime
 import base64
 import logging
 import openai
@@ -26,7 +26,7 @@ class Message_Response:
         self.memory = ConversationBufferWindowMemory(k=5)
         self.setup_chat_models()
 
-    def setup_chat_models(self):
+    def setup_chat_models(self) -> None:
         """setup the model and prompt"""
         self.chat = ChatPerplexity(
             temperature=0.2,
@@ -163,20 +163,20 @@ class Message_Response:
             logger.error(error_msg)
             return f"轉錄時發生意外錯誤：{str(e)}"
 
-    def get_temp_image(self, user_id):
+    def get_temp_image(self, user_id) -> None:
         """Get the temporary image path for a user."""
         return self.temp_images.get(user_id)
 
-    def store_temp_image(self, user_id, image_path):
+    def store_temp_image(self, user_id, image_path) -> None:
         """Store the temporary image path for a user."""
         self.temp_images[user_id] = image_path
 
-    def clear_temp_image(self, user_id):
+    def clear_temp_image(self, user_id) -> None:
         """Clear the temporary image path for a user."""
         if user_id in self.temp_images:
             del self.temp_images[user_id]
 
-    def process_image_with_info(self, image_path, additional_info):
+    def process_image_with_info(self, image_path, additional_info) -> str:
         """Process the image with additional information using ChatGPT API."""
         with open(image_path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
@@ -215,7 +215,7 @@ class Message_Response:
         """Clear all memory"""
         self.memory.clear()
 
-    def save_chat_history(self, user_id, message, response):
+    def save_chat_history(self, user_id, message, response) -> None:
         """Save chat history to PostgreSQL database."""
         try:
             conn = psycopg2.connect(

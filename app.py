@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from linebot.models import TextMessage, AudioMessage, ImageMessage
 from linebot import (
     LineBotApi, WebhookHandler
@@ -14,7 +14,7 @@ from message_response import Message_Response
 
 
 #======python的函數庫==========
-import tempfile, os
+import tempfile, os, requests
 import logging
 import traceback
 #======python的函數庫==========
@@ -248,6 +248,49 @@ def welcome(event):
     message = TextSendMessage(text=f'{name}歡迎加入, 輸入 0 來清除之前的歷史對話')
     line_bot_api.reply_message(event.reply_token, message)
 
+def send_message_to_api(user_id, user_message, bot_response):
+    api_url = "http://216.24.60.0/24:5000/api/messages"  # Use your actual server address in production
+    
+    payload = {
+        "user_id": user_id,
+        "user_message": user_message,
+        "bot_response": bot_response
+    }
+
+    try:
+        response = requests.post(api_url, json=payload)
+        response.raise_for_status()
+        logger.info(f"Successfully sent messages to API for user {user_id}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to send messages to API: {e}")
+
+# New API endpoint to receive messages
+@app.route("/api/messages", methods=['POST'])
+def receive_messages():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    user_id = data.get('user_id')
+    user_message = data.get('user_message')
+    bot_response = data.get('bot_response')
+
+    if not all([user_id, user_message, bot_response]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        # Here you would typically save this data to a database
+        # For this example, we'll just log it
+        logger.info(f"Received message data: User ID: {user_id}, "
+                    f"User Message: {user_message}, Bot Response: {bot_response}")
+
+        # In a real application, you might do something like:
+        # save_message_to_database(user_id, user_message, bot_response)
+
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        logger.error(f"Error processing message data: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
