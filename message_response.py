@@ -21,6 +21,10 @@ class Message_Response:
     def __init__(self) -> None:
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
+        self.DB_HOST = os.getenv('DB_HOST')
+        self.DB_NAME = os.getenv('DB_NAME')
+        self.DB_USER = os.getenv('DB_USER')
+        self.DB_PASSWORD = os.getenv('DB_PASSWORD')
         openai.api_key = self.openai_api_key
         self.temp_images = {}
         self.memory = ConversationBufferWindowMemory(k=5)
@@ -219,10 +223,11 @@ class Message_Response:
         """Save chat history to PostgreSQL database."""
         try:
             conn = psycopg2.connect(
-                dbname="airflow",
-                user="airflow",
-                password="airflow",
-                host="postgres"  # This should be the service name of your PostgreSQL container
+                host=self.DB_HOST,
+                port='5432',
+                database=self.DB_NAME,
+                user=self.DB_USER,
+                password=self.DB_PASSWORD
             )
             cur = conn.cursor()
             cur.execute("""
