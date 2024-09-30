@@ -235,7 +235,13 @@ class Message_Response:
             cur = conn.cursor()
             s3_url = getattr(self, 's3_url', None)
             history_json = json.dumps(history)
-
+            logger.info(f"Storing data for user {user_id}:\n"
+                        f"User message: {user_msg}\n"
+                        f"Rephrased message: {rephrase_msg}\n"
+                        f"Image URL: {s3_url}\n"
+                        f"History: {history}\n"
+                        f"Response: {response}\n"
+                        f"Timestamp: {datetime.now()}")
             cur.execute("""
                 INSERT INTO chat_history (user_id, user_msg, rephrase_msg, image, history, response, timestamp)
                 VALUES (%s, %s, %s, %s)
