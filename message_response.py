@@ -243,12 +243,12 @@ class Message_Response:
                         f"User message: {user_msg}\n"
                         f"Rephrased message: {rephrase_msg}\n"
                         f"Image URL: {s3_url}\n"
-                        f"History: {history}\n"
+                        f"History: {history_json}\n"
                         f"Response: {response}\n"
                         f"Timestamp: {datetime.now()}")
             cur.execute("""
                 INSERT INTO chat_history (user_id, user_msg, rephrase_msg, image, history, response, timestamp)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (user_id, user_msg, rephrase_msg, s3_url, history_json, response, datetime.now()))
             conn.commit()
             cur.close()
