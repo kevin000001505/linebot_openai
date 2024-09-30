@@ -6,6 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
 from datetime import datetime
 import os
+import json
 import psycopg2
 import base64
 import logging
@@ -187,7 +188,6 @@ class Message_Response:
         """Process the image with additional information using ChatGPT API."""
         with open(image_path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-        logging.info(f"Image:\n{image_base64}")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.openai_api_key}"
@@ -234,10 +234,12 @@ class Message_Response:
             )
             cur = conn.cursor()
             s3_url = getattr(self, 's3_url', None)
+            history_json = json.dumps(history)
+
             cur.execute("""
                 INSERT INTO chat_history (user_id, user_msg, rephrase_msg, image, history, response, timestamp)
                 VALUES (%s, %s, %s, %s)
-            """, (user_id, user_msg, rephrase_msg, history, s3_url, response, datetime.now()))
+            """, (user_id, user_msg, rephrase_msg, s3_url, history_json, response, datetime.now()))
             conn.commit()
             cur.close()
             conn.close()
