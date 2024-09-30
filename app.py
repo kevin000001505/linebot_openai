@@ -71,7 +71,7 @@ def handle_text_message(event):
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    
+    logger.info(f"Image Path:\n{temp_image_path}")
     if temp_image_path:
         try:
             # Process the image with the additional information
@@ -86,7 +86,7 @@ def handle_text_message(event):
             last_questions = questions.split("\n")
 
             # Save chat history
-            msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+            # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
@@ -114,7 +114,7 @@ def handle_text_message(event):
                 # Modify the response that LLM don't need to rephrase it.
                 Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question, rephrase=False)
                 last_questions = new_questions.split('\n')
-                msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+                # msg_response.save_chat_history(user_id, select_question, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
@@ -189,7 +189,7 @@ def handle_audio_message(event):
         last_questions = questions.split('\n')
         
         # Save chat history
-        msg_response.save_chat_history(user_id, msg, Preplexity_answer)
+        # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
 

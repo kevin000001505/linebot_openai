@@ -98,17 +98,20 @@ class Message_Response:
             verbose=False,
         )
     # Modify the function that if False then don't need modify.
-    def Perplexity_response(self, text, rephrase=True) -> str:
+    def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(self.conversation_with_summary.memory)
             if rephrase:
-                rephrased_text = self.rephrase_user_input(text, history)
-                response = self.conversation_with_summary.invoke({"input": rephrased_text})
+                rephrased_msg = self.rephrase_user_input(msg, history)
+                response = self.conversation_with_summary.invoke({"input": rephrased_msg})
             else:
-                response = self.conversation_with_summary.invoke({"input": text})
+                response = self.conversation_with_summary.invoke({"input": msg})
+                rephrased_msg = None
             logger.info(f"Response: {response}")
-            further_questions = self.further_question(text, history)
+            further_questions = self.further_question(msg, history)
+
+            self.save_chat_history(user_id, msg, rephrased_msg, history, response['response'])
             return response['response'], further_questions
         except Exception as e:
             logger.error(f"Error running the chain: {e}")
@@ -184,7 +187,7 @@ class Message_Response:
         """Process the image with additional information using ChatGPT API."""
         with open(image_path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-
+        logging.info(f"Image:\n{image_base64}")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.openai_api_key}"
@@ -219,7 +222,7 @@ class Message_Response:
         """Clear all memory"""
         self.memory.clear()
 
-    def save_chat_history(self, user_id, message, response) -> None:
+    def save_chat_history(self, user_id, user_msg, rephrase_msg, history, response) -> None:
         """Save chat history to PostgreSQL database."""
         try:
             conn = psycopg2.connect(
@@ -231,9 +234,9 @@ class Message_Response:
             )
             cur = conn.cursor()
             cur.execute("""
-                INSERT INTO chat_history (user_id, message, response, timestamp)
+                INSERT INTO chat_history (user_id, user_msg, rephrase_msg, history, response, timestamp)
                 VALUES (%s, %s, %s, %s)
-            """, (user_id, message, response, datetime.now()))
+            """, (user_id, user_msg, rephrase_msg, history, response, datetime.now()))
             conn.commit()
             cur.close()
             conn.close()
