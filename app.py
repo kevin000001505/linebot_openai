@@ -14,9 +14,11 @@ from message_response import Message_Response
 
 
 #======python的函數庫==========
-import tempfile, os, requests
+import tempfile, os
+import boto3
 import logging
 import traceback
+from botocore.exceptions import NoCredentialsError
 #======python的函數庫==========
 
 logging.basicConfig(level=logging.INFO, 
@@ -32,6 +34,12 @@ handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
 # Initialize the Message_Response class
 msg_response = Message_Response()
+
+# AWS S3 access
+aws_access_key_id = os.getenv('aws_access_key_id')
+aws_secret_access_key = os.getenv('aws_secret_access_key')
+s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+S3_BUCKET='linebot-image-kevin'
 
 # global variable to store the questions
 last_questions = []
@@ -80,13 +88,13 @@ def handle_text_message(event):
             # Clear the stored image path
             msg_response.clear_temp_image(user_id)
 
-            Preplexity_answer, questions = msg_response.Perplexity_response(f"Provide more information from this object describe:{response}")
+            Preplexity_answer, questions = msg_response.Perplexity_response(
+                user_id=user_id, 
+                msg=f"Provide more information from this object describe:{response}",
+                )
             
             # Split the questions and filter out any empty strings
             last_questions = questions.split("\n")
-
-            # Save chat history
-            # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
@@ -112,9 +120,12 @@ def handle_text_message(event):
             select_question = last_questions[question_index]
             try:
                 # Modify the response that LLM don't need to rephrase it.
-                Preplexity_answer, new_questions = msg_response.Perplexity_response(select_question, rephrase=False)
+                Preplexity_answer, new_questions = msg_response.Perplexity_response(
+                    user_id=user_id, 
+                    msg=select_question, 
+                    rephrase=False,
+                    )
                 last_questions = new_questions.split('\n')
-                # msg_response.save_chat_history(user_id, select_question, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
@@ -142,9 +153,11 @@ def handle_text_message(event):
             )
         else:
             try:
-                Preplexity_answer, questions = msg_response.Perplexity_response(msg)
+                Preplexity_answer, questions = msg_response.Perplexity_response(
+                    user_id=user_id, 
+                    msg=msg,
+                    )
                 last_questions = questions.split('\n')
-                msg_response.save_chat_history(user_id, msg, Preplexity_answer)
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
@@ -185,7 +198,10 @@ def handle_audio_message(event):
             raise Exception(msg)
         
         # Process the transcribed text
-        Preplexity_answer, questions = msg_response.Perplexity_response(msg)
+        Preplexity_answer, questions = msg_response.Perplexity_response(
+            user_id=user_id, 
+            msg=msg,
+            )
         last_questions = questions.split('\n')
         
         # Save chat history
@@ -217,6 +233,7 @@ def handle_audio_message(event):
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
     message_content = line_bot_api.get_message_content(event.message.id)
+    user_id = event.source.user_id
 
     # Save the image to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_image:
@@ -224,15 +241,32 @@ def handle_image_message(event):
             temp_image.write(chunk)
         temp_image_path = temp_image.name
 
-    # Store the temporary file path in the user's session
-    user_id = event.source.user_id
-    msg_response.store_temp_image(user_id, temp_image_path)
+    try:
+        # Create a unique key for the S3 object
+        s3_key = f'line_images/{user_id}/{temp_image.name.split("/")[-1]}'
+        
+        # Upload the file to S3
+        s3.upload_file(temp_image_path, S3_BUCKET, s3_key)
+        
+        # Get the S3 URL
+        s3_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{s3_key}"
 
-    # Ask the user for more information
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="請提供更多關於這張圖片的信息或問題。")
-    )
+    except FileNotFoundError:
+        print("The file was not found")
+        logger.debug("圖片上傳失敗。請重試。")
+
+    except NoCredentialsError:
+        print("Credentials not available")
+        logger.debug("圖片上傳失敗，無法驗證AWS認證。")
+
+    finally:
+        # Store the temporary file path in the user's session
+        msg_response.store_temp_image(user_id, temp_image_path, s3_url)
+        # Ask the user for more information
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請提供更多關於這張圖片的信息或問題。")
+        )
 
 @handler.add(PostbackEvent)
 def handle_message(event):

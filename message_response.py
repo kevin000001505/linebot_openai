@@ -98,7 +98,7 @@ class Message_Response:
             verbose=False,
         )
     # Modify the function that if False then don't need modify.
-    def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
+    def Perplexity_response(self, user_id, msg, image=None, rephrase=True) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(self.conversation_with_summary.memory)
@@ -110,7 +110,6 @@ class Message_Response:
                 rephrased_msg = None
             logger.info(f"Response: {response}")
             further_questions = self.further_question(msg, history)
-
             self.save_chat_history(user_id, msg, rephrased_msg, history, response['response'])
             return response['response'], further_questions
         except Exception as e:
@@ -174,9 +173,10 @@ class Message_Response:
         """Get the temporary image path for a user."""
         return self.temp_images.get(user_id)
 
-    def store_temp_image(self, user_id, image_path) -> None:
+    def store_temp_image(self, user_id, image_path, s3_url) -> None:
         """Store the temporary image path for a user."""
         self.temp_images[user_id] = image_path
+        self.s3_url = s3_url
 
     def clear_temp_image(self, user_id) -> None:
         """Clear the temporary image path for a user."""
@@ -233,13 +233,16 @@ class Message_Response:
                 password=self.DB_PASSWORD
             )
             cur = conn.cursor()
+            s3_url = getattr(self, 's3_url', None)
             cur.execute("""
-                INSERT INTO chat_history (user_id, user_msg, rephrase_msg, history, response, timestamp)
+                INSERT INTO chat_history (user_id, user_msg, rephrase_msg, image, history, response, timestamp)
                 VALUES (%s, %s, %s, %s)
-            """, (user_id, user_msg, rephrase_msg, history, response, datetime.now()))
+            """, (user_id, user_msg, rephrase_msg, history, s3_url, response, datetime.now()))
             conn.commit()
             cur.close()
             conn.close()
+            if hasattr(self, 's3_url'):
+                del self.s3_url
             logger.info(f"Chat history saved for user {user_id}")
         except Exception as e:
             logger.error(f"Error saving chat history: {e}")
