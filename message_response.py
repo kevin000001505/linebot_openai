@@ -111,6 +111,9 @@ class Message_Response:
                 rephrased_msg = None
             logger.info(f"Response: {response}")
             further_questions = self.further_question(msg, history)
+            if self.user_info:
+                msg = f"{self.user_info} | {msg}"
+                del self.user_info
             self.save_chat_history(user_id, msg, rephrased_msg, history, response['response'])
             return response['response'], further_questions
         except Exception as e:
@@ -186,6 +189,7 @@ class Message_Response:
 
     def process_image_with_info(self, image_path, additional_info) -> str:
         """Process the image with additional information using ChatGPT API."""
+        self.user_info = additional_info
         with open(image_path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
         headers = {
@@ -234,7 +238,7 @@ class Message_Response:
             )
             cur = conn.cursor()
             s3_url = getattr(self, 's3_url', None)
-            history_json = json.dumps(history)
+            history_json = json.dumps(history) if history else None
             logger.info(f"Storing data for user {user_id}:\n"
                         f"User message: {user_msg}\n"
                         f"Rephrased message: {rephrase_msg}\n"

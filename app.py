@@ -102,7 +102,7 @@ def handle_text_message(event):
                 TextSendMessage(text=Preplexity_answer),
                 TextSendMessage(text=f"以下是後續問題：\n{questions}"),
                 TextSendMessage(
-                    text="選擇一個問題編號來獲取更多信息：",
+                    text="選擇一個問題編號來獲取更多信息",
                     quick_reply=QuickReply(items=quick_reply_buttons)
                 )
             ]
@@ -164,7 +164,7 @@ def handle_text_message(event):
                     TextSendMessage(text=Preplexity_answer),
                     TextSendMessage(text=f"以下是後續問題：\n{questions}"),
                     TextSendMessage(
-                        text="選擇一個問題編號來獲取更多信息：",
+                        text="選擇一個問題編號來獲取更多信息",
                         quick_reply=QuickReply(items=quick_reply_buttons)
                     )
                 ]
@@ -203,9 +203,6 @@ def handle_audio_message(event):
             msg=msg,
             )
         last_questions = questions.split('\n')
-        
-        # Save chat history
-        # msg_response.save_chat_history(user_id, msg, Preplexity_answer)
 
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
