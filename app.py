@@ -241,6 +241,7 @@ def handle_audio_message(event):
 def handle_image_message(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     user_id = event.source.user_id
+    time = event.timestamp
 
     # Save the image to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_image:
@@ -250,7 +251,7 @@ def handle_image_message(event):
 
     try:
         # Create a unique key for the S3 object
-        s3_key = f'line_images/{user_id}/{temp_image.name.split("/")[-1]}'
+        s3_key = f'line_images/{user_id}/{time}'
         
         # Upload the file to S3
         s3.upload_file(temp_image_path, S3_BUCKET, s3_key)
