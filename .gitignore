@@ -16,3 +16,6 @@ __pycache__/
 *.ipynb
 *.jpg
 *.jpeg
+docker-compose.yml
+chat_history_dag.py
+logs/

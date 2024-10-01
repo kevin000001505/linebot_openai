@@ -80,6 +80,13 @@ def handle_text_message(event):
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
     logger.info(f"Image Path:\n{temp_image_path}")
+    if msg == '0':
+        msg_response.clear_memory()
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextMessage("已刪除歷史紀錄")
+        )
+        return None
     if temp_image_path:
         try:
             # Process the image with the additional information
@@ -145,12 +152,6 @@ def handle_text_message(event):
                     event.reply_token, 
                     TextSendMessage('處理您的請求時發生錯誤，請稍後再試。')
                 )
-        elif msg == '0':
-            msg_response.clear_memory()
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextMessage("已刪除歷史紀錄")
-            )
         else:
             try:
                 Preplexity_answer, questions = msg_response.Perplexity_response(
