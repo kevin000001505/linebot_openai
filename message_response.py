@@ -5,6 +5,8 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.prompts import ChatPromptTemplate
 from openai import OpenAI
 from datetime import datetime
+from config import Config
+from utils.logger import setup_logger
 import os
 import json
 import psycopg2
@@ -13,19 +15,17 @@ import logging
 import openai
 import requests
 
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = setup_logger()
 
 class Message_Response:
 
     def __init__(self) -> None:
-        self.openai_api_key = os.getenv('OPENAI_API_KEY')
-        self.Preplexity_API_KEY = os.getenv('PREPLEXITY_API_KEY')
-        self.DB_HOST = os.getenv('DB_HOST')
-        self.DB_NAME = os.getenv('DB_NAME')
-        self.DB_USER = os.getenv('DB_USER')
-        self.DB_PASSWORD = os.getenv('DB_PASSWORD')
+        self.openai_api_key = Config.OPENAI_API_KEY
+        self.Preplexity_API_KEY = Config.PREPLEXITY_API_KEY
+        self.DB_HOST = Config.DB_HOST
+        self.DB_NAME = Config.DB_NAME
+        self.DB_USER = Config.DB_USER
+        self.DB_PASSWORD = Config.DB_PASSWORD
         self.user_info = None
         openai.api_key = self.openai_api_key
         self.temp_images = {}
@@ -192,6 +192,20 @@ class Message_Response:
         """Process the image with additional information using ChatGPT API."""
         self.user_info = additional_info
 
+        messages = [
+        {"role": "user", "content": "Here's an image or images along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."}
+        ]
+        for image_path in image_paths:
+            with open(image_path, "rb") as img:
+                image_base64 = base64.b64encode(img.read()).decode('utf-8')
+            messages.append({"role": "user", "content": f"data:image/jpeg;base64,{image_base64}"})
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=messages,
+            max_tokens=1000
+        )
+        return response['choices'][0]['message']['content']
         # Prepare the content list with text and images
         content = [
             {
@@ -222,18 +236,6 @@ class Message_Response:
                 {
                     "role": "user",
                     "content": content
-                    # "content": [
-                    #     {
-                    #         "type": "text",
-                    #         "text": f"Here's an image or images along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."
-                    #     },
-                    #     {
-                    #         "type": "image_url",
-                    #         "image_url": {
-                    #             "url": f"data:image/jpeg;base64,{image_base64}"
-                    #         }
-                    #     }
-                    # ]
                 }
             ],
             "max_tokens": 1000

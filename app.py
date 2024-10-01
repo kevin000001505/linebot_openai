@@ -10,36 +10,35 @@ from linebot.models import *
 
 #======自訂的函數庫==========
 from message_response import Message_Response
+from config import Config
+from utils.logger import setup_logger
 #======自訂的函數庫==========
 
 
 #======python的函數庫==========
 import tempfile, os
 import boto3
-import logging
 import traceback
 from botocore.exceptions import NoCredentialsError
 #======python的函數庫==========
 
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = setup_logger()
 
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 # Channel Access Token
-line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
+line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
 # Channel Secret
-handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
+handler = WebhookHandler(Config.CHANNEL_SECRET)
 
 # Initialize the Message_Response class
 msg_response = Message_Response()
 
 # AWS S3 access
-aws_access_key_id = os.getenv('aws_access_key_id')
-aws_secret_access_key = os.getenv('aws_secret_access_key')
+aws_access_key_id = Config.AWS_ACCESS_KEY_ID
+aws_secret_access_key = Config.AWS_SECRET_ACCESS_KEY
 s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-S3_BUCKET='linebot-image-kevin'
+S3_BUCKET=Config.S3_BUCKET
 
 # global variable to store the questions
 last_questions = []
@@ -291,6 +290,6 @@ def welcome(event):
     line_bot_api.reply_message(event.reply_token, message)
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
+    port = Config.PORT
     logger.info(f"Starting server on port {port}")
     app.run(host='0.0.0.0', port=port)
