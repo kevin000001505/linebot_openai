@@ -110,12 +110,12 @@ class Message_Response:
             else:
                 response = self.conversation_with_summary.invoke({"input": msg})
                 rephrased_msg = None
-            logger.info(f"Response: {response}")
+            logger.debug(f"Response: {response}")
             further_questions = self.further_question(msg, history)
             logger.info(f"Further question{further_questions}")
             if self.user_info:
                 msg = f"{self.user_info} | {msg}"
-                del self.user_info
+                self.user_info = None
             self.save_chat_history(user_id, msg, rephrased_msg, history, response['response'])
             return response['response'], further_questions
         except Exception as e:
