@@ -112,6 +112,7 @@ class Message_Response:
                 rephrased_msg = None
             logger.info(f"Response: {response}")
             further_questions = self.further_question(msg, history)
+            logger.info(f"Further question{further_questions}")
             if self.user_info:
                 msg = f"{self.user_info} | {msg}"
                 del self.user_info

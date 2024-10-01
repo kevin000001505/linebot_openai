@@ -125,15 +125,16 @@ def handle_text_message(event):
     else:
         if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
             question_index = int(msg) - 1
-            logger.debug(last_questions) # Test
+            logger.info(f"Last question {last_questions}") # Test
             select_question = last_questions[question_index]
             try:
                 # Modify the response that LLM don't need to rephrase it.
                 Preplexity_answer, new_questions = msg_response.Perplexity_response(
-                    user_id=user_id, 
-                    msg=select_question, 
+                    user_id=user_id,
+                    msg=select_question,
                     rephrase=False,
                     )
+
                 last_questions = new_questions.split('\n')
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
