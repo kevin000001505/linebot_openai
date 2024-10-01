@@ -79,14 +79,17 @@ def handle_text_message(event):
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    logger.info(f"Image Path:\n{temp_image_path}")
     if msg == '0':
-        msg_response.clear_memory()
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextMessage("已刪除歷史紀錄")
-        )
-        return None
+        try:
+            msg_response.clear_memory()
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextMessage("已刪除歷史紀錄")
+            )
+        except Exception as e:
+            logger.error(e)
+        finally:
+            return None
     if temp_image_path:
         try:
             # Process the image with the additional information
@@ -158,18 +161,25 @@ def handle_text_message(event):
                     user_id=user_id, 
                     msg=msg,
                     )
-                last_questions = questions.split('\n')
-                quick_reply_buttons = create_quick_reply_buttons(last_questions)
+                if questions:
+                    last_questions = questions.split('\n')
+                    quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
-                messages = [
-                    TextSendMessage(text=Preplexity_answer),
-                    TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-                    TextSendMessage(
-                        text="選擇一個問題編號來獲取更多信息",
-                        quick_reply=QuickReply(items=quick_reply_buttons)
-                    )
-                ]
-                line_bot_api.reply_message(event.reply_token, messages)
+                    messages = [
+                        TextSendMessage(text=Preplexity_answer),
+                        TextSendMessage(text=f"以下是後續問題：\n{questions}"),
+                        TextSendMessage(
+                            text="選擇一個問題編號來獲取更多信息",
+                            quick_reply=QuickReply(items=quick_reply_buttons)
+                        )
+                    ]
+                    line_bot_api.reply_message(event.reply_token, messages)
+                else:
+                    messages = [
+                        TextSendMessage(text=Preplexity_answer),
+                        TextSendMessage(text="請提供更詳細的問題")
+                    ]
+                    line_bot_api.reply_message(event.reply_token, messages)
             except Exception as e:
                 logger.exception(traceback.format_exc())
                 logger.error(e)
