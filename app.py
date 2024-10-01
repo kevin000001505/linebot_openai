@@ -84,7 +84,7 @@ def handle_text_message(event):
             msg_response.clear_memory()
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessage("已刪除歷史紀錄")
+                TextSendMessage("已刪除歷史紀錄")
             )
         except Exception as e:
             logger.error(e)
