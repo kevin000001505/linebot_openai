@@ -247,7 +247,7 @@ def handle_image_message(event):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_image:
         for chunk in message_content.iter_content():
             temp_image.write(chunk)
-        temp_image_path = [temp_image.name]
+        temp_image_path = temp_image.name
 
     try:
         # Create a unique key for the S3 object

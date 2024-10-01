@@ -188,17 +188,16 @@ class Message_Response:
         if user_id in self.temp_images:
             del self.temp_images[user_id]
 
-    def process_image_with_info(self, image_paths, additional_info) -> str:
+    def process_image_with_info(self, image_path, additional_info) -> str:
         """Process the image with additional information using ChatGPT API."""
         self.user_info = additional_info
 
         messages = [
         {"role": "user", "content": "Here's an image or images along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."}
         ]
-        for image_path in image_paths:
-            with open(image_path, "rb") as img:
-                image_base64 = base64.b64encode(img.read()).decode('utf-8')
-            messages.append({"role": "user", "content": f"data:image/jpeg;base64,{image_base64}"})
+        with open(image_path, "rb") as img:
+            image_base64 = base64.b64encode(img.read()).decode('utf-8')
+        messages.append({"role": "user", "content": f"data:image/jpeg;base64,{image_base64}"})
         
         response = openai.ChatCompletion.create(
             model="gpt-4o",
