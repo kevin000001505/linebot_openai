@@ -26,6 +26,7 @@ class Message_Response:
         self.DB_NAME = os.getenv('DB_NAME')
         self.DB_USER = os.getenv('DB_USER')
         self.DB_PASSWORD = os.getenv('DB_PASSWORD')
+        self.user_info = None
         openai.api_key = self.openai_api_key
         self.temp_images = {}
         self.memory = ConversationBufferWindowMemory(k=5)
