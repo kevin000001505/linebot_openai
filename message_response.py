@@ -191,20 +191,6 @@ class Message_Response:
     def process_image_with_info(self, image_path, additional_info) -> str:
         """Process the image with additional information using ChatGPT API."""
         self.user_info = additional_info
-
-        messages = [
-        {"role": "user", "content": "Here's an image or images along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."}
-        ]
-        with open(image_path, "rb") as img:
-            image_base64 = base64.b64encode(img.read()).decode('utf-8')
-        messages.append({"role": "user", "content": f"data:image/jpeg;base64,{image_base64}"})
-        
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=messages,
-            max_tokens=1000
-        )
-        return response['choices'][0]['message']['content']
         # Prepare the content list with text and images
         content = [
             {
@@ -213,15 +199,14 @@ class Message_Response:
             }
         ]
          # Add each image to the content list
-        for image_path in image_paths:
-            with open(image_path, "rb") as image_file:
-                image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-            content.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{image_base64}"
-                }
-            })
+        with open(image_path, "rb") as image_file:
+            image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image_base64}"
+            }
+        })
         # with open(image_paths, "rb") as image_file:
         #     image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
         headers = {
