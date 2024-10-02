@@ -133,13 +133,12 @@ def handle_text_message(event):
                     msg=select_question,
                     rephrase=False,
                     )
-                logger.info(f"New Question: /n{new_questions}")
                 last_questions = new_questions.split('\n')
                 quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                 messages = [
                     TextSendMessage(text=Preplexity_answer),
-                    TextSendMessage(text=f"以下是後續問題：\n"),
+                    TextSendMessage(text=f"以下是後續問題：\n{new_questions}"),
                     TextSendMessage(
                         text="選擇一個問題編號來獲取更多信息",
                         quick_reply=QuickReply(items=quick_reply_buttons)

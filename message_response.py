@@ -112,7 +112,6 @@ class Message_Response:
                 rephrased_msg = None
             logger.debug(f"Response: {response}")
             further_questions = self.further_question(msg, history)
-            logger.info(f"Further question in Perplexity Response: /n{further_questions}")
             if self.user_info:
                 msg = f"{self.user_info} | {msg}"
                 self.user_info = None
