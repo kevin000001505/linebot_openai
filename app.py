@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort
 from linebot.models import TextMessage, AudioMessage, ImageMessage
 from linebot import (
     LineBotApi, WebhookHandler
@@ -87,8 +87,12 @@ def handle_text_message(event):
             )
         except Exception as e:
             logger.error(e)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage("刪除歷史紀錄出錯")
+            )
         finally:
-            return None
+            return 
     if temp_image_path:
         try:
             # Process the image with the additional information
@@ -214,7 +218,6 @@ def handle_audio_message(event):
         last_questions = questions.split('\n')
 
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
 
         messages = [
             TextSendMessage(text=Preplexity_answer),

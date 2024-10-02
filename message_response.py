@@ -1,19 +1,28 @@
-from langchain_community.chat_models import ChatPerplexity
-from langchain_openai import ChatOpenAI
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferWindowMemory
-from langchain_core.prompts import ChatPromptTemplate
-from openai import OpenAI
-from datetime import datetime
-from config import Config
-from utils.logger import setup_logger
+# Standard library imports
 import os
 import json
-import psycopg2
 import base64
 import logging
+from datetime import datetime
+
+# Third-party library imports
 import openai
 import requests
+import psycopg2
+
+# Custom/Local imports
+from config import Config
+from utils.logger import setup_logger
+
+# Langchain imports
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import ConversationChain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatPerplexity
+from langchain_openai import ChatOpenAI
+
+# OpenAI SDK import
+from openai import OpenAI
 
 logger = setup_logger()
 
@@ -100,7 +109,7 @@ class Message_Response:
             verbose=False,
         )
     # Modify the function that if False then don't need modify.
-    def Perplexity_response(self, user_id, msg, image=None, rephrase=True) -> str:
+    def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(self.conversation_with_summary.memory)
@@ -195,7 +204,7 @@ class Message_Response:
         content = [
             {
                 "type": "text",
-                "text": f"Here's an image or images along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."
+                "text": f"Here's an image along with additional information: {additional_info}. Please analyze the image considering this information and provide insights."
             }
         ]
          # Add each image to the content list
