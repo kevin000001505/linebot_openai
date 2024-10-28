@@ -7,3 +7,7 @@ langchain_community
 langchain-openai
 psycopg2-binary
 boto3
+scrapy
+pyquery
+redis
+scrapy-redis

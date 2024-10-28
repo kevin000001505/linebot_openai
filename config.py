@@ -24,3 +24,6 @@ class Config:
     # Other configurations
     PORT = int(os.getenv("PORT", 5000))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+    # Google Map API
+    GOOGLE_MAP_API = os.getenv("GOOGLE_MAP_API")

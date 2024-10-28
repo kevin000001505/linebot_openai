@@ -9,6 +9,7 @@ from datetime import datetime
 import openai
 import requests
 import psycopg2
+import googlemaps
 
 # Custom/Local imports
 from config import Config
@@ -40,14 +41,14 @@ class MessageResponse:
 
     def setup_chat_models(self) -> None:
         """setup the model and prompt"""
-        self.chat = ChatPerplexity(
+        Perplexity_chat = ChatPerplexity(
             temperature=0.2,
             model="llama-3.1-sonar-large-128k-online",
             pplx_api_key=self.Preplexity_API_KEY,
             max_tokens=2048,
         )
 
-        self.prompt = ChatPromptTemplate.from_template(
+        Translate_prompt = ChatPromptTemplate.from_template(
             """
         You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
@@ -59,20 +60,20 @@ class MessageResponse:
         )
 
         self.conversation_with_summary = ConversationChain(
-            llm=self.chat,
-            prompt=self.prompt,
+            llm=Perplexity_chat,
+            prompt=Translate_prompt,
             memory=self.memory,
             verbose=True,
         )
 
-        self.rephrase_llm = ChatOpenAI(
+        gpt_mini = ChatOpenAI(
             openai_api_key=self.openai_api_key,
             model_name="gpt-4o-mini",
             temperature=0.8,
             max_tokens=2048,
         )
 
-        self.rephrase_prompt = ChatPromptTemplate.from_template(
+        rephrase_prompt = ChatPromptTemplate.from_template(
             """
         根據以下對話歷史和用戶訊息，請重新表述用戶的問題，使其更清晰易懂。
 
@@ -86,13 +87,13 @@ class MessageResponse:
         )
 
         self.rephrase_conversation = ConversationChain(
-            llm=self.rephrase_llm,
-            prompt=self.rephrase_prompt,
+            llm=gpt_mini,
+            prompt=rephrase_prompt,
             memory=self.memory,
             verbose=False,
         )
 
-        self.further_prompt = ChatPromptTemplate.from_template(
+        further_prompt = ChatPromptTemplate.from_template(
             """
         根據以下對話歷史和用戶訊息，請提供10個問題給用戶參考提問給 LLM ，讓用戶能知道還能問哪些問題。
 
@@ -106,10 +107,30 @@ class MessageResponse:
         )
 
         self.further_conversation = ConversationChain(
-            llm=self.rephrase_llm,
-            prompt=self.further_prompt,
+            llm=gpt_mini,
+            prompt=further_prompt,
             memory=self.memory,
             verbose=False,
+        )
+
+        location_info_prompt = ChatPromptTemplate.from_template(
+            """
+        根據以下對話歷史和用戶訊息，請找出使用者想找的地標,餐廳或任何會出現在 google map 上的資訊，並把訊息改成 google map 比較容易查詢的方式。
+
+        對話歷史:
+        {history}
+
+        用戶訊息: {input}
+
+        修改後的 google map query:
+        """
+        )
+
+        self.location_info_conversation = ConversationChain(
+            llm=gpt_mini,
+            prompt=location_info_prompt,
+            memory=self.memory,
+            verbose=True,
         )
 
     # Modify the function that if False then don't need modify.
@@ -295,3 +316,33 @@ class MessageResponse:
             logger.info(f"Chat history saved for user {user_id}")
         except Exception as e:
             logger.error(f"Error saving chat history: {e}")
+
+    def search_google_map(self, msg: str) -> str:
+        # Initialize the Google Maps client with your API key
+        gmaps = googlemaps.Client(key=Config.GOOGLE_MAP_API)
+
+        # Search for a place using text
+        query = self.location_info_conversation(msg)
+        places_result = gmaps.places(query)
+
+        for place in places_result['results']:
+            place_id = place['place_id']  # Extract place_id for each place
+
+            # Step 3: Use the place_id to get detailed information about the place
+            place_details = gmaps.place(place_id=place_id)
+
+            # Step 4: Extract place name and reviews (if available)
+            name = place_details['result']['name']
+            print(f"Place: {name}")
+
+            reviews = place_details['result'].get('reviews', [])
+            if reviews:
+                print(f"Reviews for {name}:")
+                for review in reviews:
+                    author = review.get('author_name', 'Anonymous')
+                    rating = review.get('rating', 'No rating')
+                    text = review.get('text', 'No comment')
+                    print(f"- {author} (Rating: {rating}): {text}\n")
+            else:
+                print(f"No reviews available for {name}\n")
+        pass
