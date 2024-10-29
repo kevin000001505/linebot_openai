@@ -3,10 +3,13 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
 
-import scrapy
+from scrapy import Field, Item
 
 
-class YahooNewsItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class ContentItem(Item):
+    title = Field()
+    content = Field()
+    date = Field()
+    url = Field()
+    stock_id = Field()
+

@@ -11,3 +11,4 @@ scrapy
 pyquery
 redis
 scrapy-redis
+psycopg2

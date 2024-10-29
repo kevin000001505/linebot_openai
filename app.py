@@ -8,7 +8,7 @@ from linebot.models import *
 from message_response import MessageResponse
 from config import Config
 from utils.logger import setup_logger
-
+from yahoo_news.runner import run_yahoo_crawler
 # ======自訂的函數庫==========
 
 

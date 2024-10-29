@@ -1,6 +1,5 @@
 import os
 
-
 class Config:
     # LINE Bot
     CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
