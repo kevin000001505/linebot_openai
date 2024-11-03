@@ -12,4 +12,4 @@ class ContentItem(Item):
     date = Field()
     url = Field()
     stock_id = Field()
-
+    

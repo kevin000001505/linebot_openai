@@ -58,7 +58,7 @@ class PostgresPipeline:
             # Insert item into PostgreSQL only if URL doesn't exist
             self.cur.execute("""
                 INSERT INTO articles (stock_id, title, content, date, url)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 item['stock_id'],
                 item['title'],

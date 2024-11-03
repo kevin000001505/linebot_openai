@@ -28,7 +28,7 @@ SCHEDULER = "scrapy_redis.scheduler.Scheduler"
 SCHEDULER_PERSIST = True  # Keeps queue between restarts
 
 # Deduplication settings to avoid duplicate requests
-DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+# DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
 
 ITEM_PIPELINES = {
     'yahoo_news.pipelines.PostgresPipeline': 300,

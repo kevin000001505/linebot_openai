@@ -83,10 +83,10 @@ def handle_text_message(event):
     global last_questions
     msg = event.message.text
     user_id = event.source.user_id
-
+    
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if msg == "0":
+    if msg == "@clear":
         try:
             msg_response.clear_memory()
             line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
@@ -195,44 +195,35 @@ def handle_text_message(event):
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
     user_id = event.source.user_id
+    
     if not audio_content:
         logger.error("No audio content found.")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="無法獲取音訊內容。"))
         return
+        
     try:
+        # Save and transcribe audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tf:
             for chunk in audio_content.iter_content():
                 tf.write(chunk)
             tempfile_path = tf.name
             logger.info(f"Audio saved to temporary file: {tempfile_path}")
 
-        msg = msg_response.transcribe_audio(tempfile_path)
-        if msg.startswith("Error"):
-            raise Exception(msg)
+        transcribed_text = msg_response.transcribe_audio(tempfile_path)
+        if transcribed_text.startswith("Error"):
+            raise Exception(transcribed_text)
 
-        # Process the transcribed text
-        Perplexity_answer, questions = msg_response.Perplexity_response(
-            user_id=user_id,
-            msg=msg,
-        )
-        last_questions = questions.split("\n")
-
-        quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-        messages = [
-            TextSendMessage(text=Perplexity_answer),
-            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-            TextSendMessage(
-                text="選擇一個問題編號來獲取更多信息",
-                quick_reply=QuickReply(items=quick_reply_buttons),
-            ),
-        ]
-        line_bot_api.reply_message(event.reply_token, messages)
+        # Create a new event object with the transcribed text
+        new_event = event
+        new_event.message.text = transcribed_text
+        
+        # Reuse text message handler
+        handle_text_message(new_event)
+        
     except Exception as e:
         logger.exception(f"Error handling audio message:{e}")
-        error_message = "處理您的音訊訊息時發生錯誤，請稍後再試。"
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=error_message)
+            event.reply_token, TextSendMessage(text="處理您的音訊訊息時發生錯誤，請稍後再試。")
         )
     finally:
         # Clean up the temporary file
