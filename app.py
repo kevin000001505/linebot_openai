@@ -90,13 +90,14 @@ def handle_text_message(event):
         try:
             msg_response.clear_memory()
             line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            logger.info("成功刪除")
         except Exception as e:
             logger.error(e)
             line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
-        finally:
-            return
+        return
     if temp_image_path:
         try:
+            logger.info("成功收到照片資訊")
             # Process the image with the additional information
             response = msg_response.process_image_with_info(temp_image_path, msg)
 
