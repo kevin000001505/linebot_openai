@@ -45,6 +45,9 @@ S3_BUCKET = Config.S3_BUCKET
 # global variable to store the questions
 last_questions = []
 
+# Global variable to track the current method
+current_method = "@chat"
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
 def callback():
@@ -80,10 +83,20 @@ def create_quick_reply_buttons(questions):
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
+    global current_method
+    msg = event.message.text
+    user_id = event.source.user_id
+
+    if current_method == "@stock":
+        handle_stock_message(event)
+    else:
+        handle_chat_message(event)
+
+def handle_chat_message(event):
     global last_questions
     msg = event.message.text
     user_id = event.source.user_id
-    
+
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
     if msg == "@clear":
@@ -190,15 +203,19 @@ def handle_text_message(event):
                     event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
                 )
 
+def handle_stock_message(event):
+    global current_method
+    msg = event.message.text
+    # welcome msg
     if msg == "@stock":
-        try:
-            msg_response.clear_memory()
-            # function
-            pass
-        except Exception as e:
-            logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("股票查詢出錯"))
-        return 
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟"))
+    if msg == "@exit":
+        current_method = "@chat"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+    else:
+        # Implement your stock handling logic here
+        # For example, you might query a stock API and return the result
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock message: {msg}"))
 
 
 # 處理音訊訊息
