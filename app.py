@@ -86,7 +86,8 @@ def handle_text_message(event):
     global current_method
     msg = event.message.text
     user_id = event.source.user_id
-
+    if msg == "@stock":
+        current_method == "@stock"
     if current_method == "@stock":
         handle_stock_message(event)
     else:
@@ -209,7 +210,7 @@ def handle_stock_message(event):
     # welcome msg
     if msg == "@stock":
         line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟"))
-    if msg == "@exit":
+    elif msg == "@exit":
         current_method = "@chat"
         line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
     else:
