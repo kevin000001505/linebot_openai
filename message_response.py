@@ -22,6 +22,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatPerplexity
 from langchain_openai import ChatOpenAI
 
+# Async imports
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 logger = setup_logger()
 
 
@@ -133,8 +137,7 @@ class MessageResponse:
             verbose=True,
         )
 
-    # Modify the function that if False then don't need modify.
-    def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
+    async def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(
@@ -142,17 +145,32 @@ class MessageResponse:
             )
             if rephrase:
                 rephrased_msg = self.rephrase_user_input(msg, history)
-                response = self.conversation_with_summary.invoke(
-                    {"input": rephrased_msg}
-                )
+                input_msg = rephrased_msg
             else:
-                response = self.conversation_with_summary.invoke({"input": msg})
                 rephrased_msg = None
+                input_msg = msg
+
+            # Create tasks for concurrent execution
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                response_future = loop.run_in_executor(
+                    executor,
+                    lambda: self.conversation_with_summary.invoke({"input": input_msg})
+                )
+                questions_future = loop.run_in_executor(
+                    executor,
+                    lambda: self.further_question(msg, history)
+                )
+                
+                # Wait for both tasks to complete
+                response, further_questions = await asyncio.gather(response_future, questions_future)
+
             logger.debug(f"Response: {response}")
-            further_questions = self.further_question(msg, history)
+            
             if self.user_info:
                 msg = f"{self.user_info} | {msg}"
                 self.user_info = None
+                
             self.save_chat_history(
                 user_id, msg, rephrased_msg, history, response["response"]
             )
@@ -346,3 +364,4 @@ class MessageResponse:
             else:
                 print(f"No reviews available for {name}\n")
         pass
+

@@ -190,6 +190,16 @@ def handle_text_message(event):
                     event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
                 )
 
+    if msg == "@stock":
+        try:
+            msg_response.clear_memory()
+            # function
+            pass
+        except Exception as e:
+            logger.error(e)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("股票查詢出錯"))
+        return 
+
 
 # 處理音訊訊息
 @handler.add(MessageEvent, message=AudioMessage)
