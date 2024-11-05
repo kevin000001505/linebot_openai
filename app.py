@@ -17,7 +17,6 @@ import tempfile, os
 import boto3
 import traceback
 from botocore.exceptions import NoCredentialsError
-
 # ======python的函數庫==========
 
 logger = setup_logger()
@@ -47,6 +46,10 @@ last_questions = []
 
 # Global variable to track the current method
 current_method = "@chat"
+
+# Stock Dict
+with open('stock_list.json', 'r') as json_file:
+    stock_dict = json_file
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
@@ -85,9 +88,13 @@ def create_quick_reply_buttons(questions):
 def handle_text_message(event):
     global current_method
     msg = event.message.text
-    user_id = event.source.user_id
+
+    # Check if the user wants to switch to stock mode
     if msg == "@stock":
-        current_method == "@stock"
+        current_method = "@stock"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字"))
+        return
+    # Delegate to the appropriate handler based on the current method
     if current_method == "@stock":
         handle_stock_message(event)
     else:
@@ -207,23 +214,35 @@ def handle_chat_message(event):
 def handle_stock_message(event):
     global current_method
     msg = event.message.text
-    # welcome msg
-    if msg == "@stock":
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟"))
-    elif msg == "@exit":
+
+    if msg == "@exit":
         current_method = "@chat"
         line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
-    else:
-        # Implement your stock handling logic here
-        # For example, you might query a stock API and return the result
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock message: {msg}"))
+        return
+    try:
+        stock_id = int(msg)
+        # Run the Scrapy crawler with the stock ID
+        run_yahoo_crawler(stock_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
+        # Reply the stock information to LLM
+    except ValueError:
+        try:
+            stock_id = stock_dict[msg]
+        except KeyError:
+            # Use LLM to clarify the right stock name or integer
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼"))
+    except Exception as e:
+        # Handle any errors that occur during the crawling process
+        logger.error(f"Error handling stock message: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later."))
+
+
 
 
 # 處理音訊訊息
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
-    user_id = event.source.user_id
     
     if not audio_content:
         logger.error("No audio content found.")

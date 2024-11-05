@@ -18,6 +18,7 @@ class ScrapyRunner:
         try:
             # Add both spiders to the process
             self.process.crawl('news_search', stock_id=stock_id)
+            self.process.crawl('Anue_search', stock_id=stock_id)
             self.process.crawl('content')
             
             # Start the process
