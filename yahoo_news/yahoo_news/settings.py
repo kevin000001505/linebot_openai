@@ -19,7 +19,9 @@ BOT_NAME = "yahoo_news"
 SPIDER_MODULES = ["yahoo_news.spiders"]
 NEWSPIDER_MODULE = "yahoo_news.spiders"
 
-REDIS_HOST = "localhost"
+# REDIS_HOST = "line-chatbot.redis.cache.windows.net"
+REDIS_HOST = "redis" # For docker
+# REDIS_HOST = "localhost"
 REDIS_PORT = 6379
 
 SECOND_IN_ONE_MONTH = 30 * 24 * 60 * 60  # 30 days in seconds
