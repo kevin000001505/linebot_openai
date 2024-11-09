@@ -3,8 +3,6 @@ from linebot.models import TextMessage, AudioMessage, ImageMessage
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
-from linebot.aiowebhook import WebhookHandler  # Change to async webhook handler
-
 # ======自訂的函數庫==========
 from message_response import MessageResponse
 from config import Config
@@ -55,15 +53,16 @@ with open('stock_list.json', 'r', encoding='utf-8') as json_file:
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
-async def callback():
+async def callback():  # Make callback async
     # get X-Line-Signature header value
     signature = request.headers["X-Line-Signature"]
     # get request body as text
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
+    
     # handle webhook body
     try:
-        await handler.handle(body, signature)
+        await handler.handle(body, signature)  # Await the handler
     except InvalidSignatureError:
         logger.error(
             "Invalid signature. Please check your channel access token/channel secret."
