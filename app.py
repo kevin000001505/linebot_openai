@@ -8,13 +8,14 @@ from linebot.models import *
 from message_response import MessageResponse
 from config import Config
 from utils.logger import setup_logger
-
+from stock_response import ScrapyRunner
 # ======自訂的函數庫==========
 
 
 # ======python的函數庫==========
 import tempfile, os
 import boto3
+import json
 import traceback
 from botocore.exceptions import NoCredentialsError
 
@@ -29,8 +30,13 @@ line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
 # Channel Secret
 handler = WebhookHandler(Config.CHANNEL_SECRET)
 
-# Initialize the Message_Response class
+# Initialize the Message_Response class and ScrapyRunner class
 msg_response = MessageResponse()
+stock = ScrapyRunner()
+
+# stock dictionary
+with open('stock_list.json', 'r') as file:
+    stock_dict = json.loads(file)
 
 # AWS S3 access
 aws_access_key_id = Config.AWS_ACCESS_KEY_ID
@@ -44,6 +50,7 @@ S3_BUCKET = Config.S3_BUCKET
 
 # global variable to store the questions
 last_questions = []
+current_method = '@chat'
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
@@ -231,7 +238,7 @@ def handle_stock_message(event):
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
-        run_yahoo_crawler(stock_id)
+        stock.run_yahoo_crawler(stock_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
         # Reply the stock information to LLM
     except ValueError:
@@ -268,7 +275,7 @@ def handle_audio_message(event):
 
         # Create a new event object with the transcribed text
         new_event = event
-        new_event.message.text = transcribed_text
+        new_event.message.text = msg
         
         # Reuse text message handler
         # handle_text_message(new_event)
