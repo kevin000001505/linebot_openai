@@ -1,4 +1,5 @@
 import os
+import sys
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import logging
@@ -6,8 +7,10 @@ from datetime import datetime
 
 class ScrapyRunner:
     def __init__(self):
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, project_root)
         # Set the module name for settings
-        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.settings')
+        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
         self.settings = get_project_settings()
         self.process = CrawlerProcess(self.settings)
         
