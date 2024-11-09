@@ -4,8 +4,8 @@ import redis
 import json
 from datetime import datetime, timezone
 from scrapy_redis.spiders import RedisSpider
-from yahoo_news.items import ContentItem
-from yahoo_news import settings
+from yahoo_news.yahoo_news.items import ContentItem
+from . import settings
 
 
 class NewsSearchSpider(scrapy.Spider):
