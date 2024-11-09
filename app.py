@@ -240,6 +240,7 @@ def handle_stock_message(event):
         # Run the Scrapy crawler with the stock ID
         stock.run_yahoo_crawler(stock_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
+        
         # Reply the stock information to LLM
     except ValueError:
         try:

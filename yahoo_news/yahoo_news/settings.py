@@ -35,7 +35,7 @@ SCHEDULER_PERSIST = True  # Keeps queue between restarts
 # DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
 
 ITEM_PIPELINES = {
-    'yahoo_news.pipelines.PostgresPipeline': 300,
+    'yahoo_news.yahoo_news.pipelines.PostgresPipeline': 300,
 }
 
 POSTGRES_PIPELINE_ENABLED = True
