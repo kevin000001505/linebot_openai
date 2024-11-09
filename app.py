@@ -7,6 +7,7 @@ from linebot.models import *
 # ======自訂的函數庫==========
 from message_response import MessageResponse
 from config import Config
+from utils.extract_data import pg_extract
 from utils.logger import setup_logger
 from stock_response import ScrapyRunner
 # ======自訂的函數庫==========
@@ -241,8 +242,9 @@ def handle_stock_message(event):
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
         stock.run_yahoo_crawler(stock_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
-        
+        # line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
+        article_list = pg_extract(stock_id=stock_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Extracting the number of articles: {len(article_list)}"))
         # Reply the stock information to LLM
     except ValueError:
         try:
