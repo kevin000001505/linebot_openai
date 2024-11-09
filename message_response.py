@@ -5,7 +5,7 @@ import base64
 import logging
 from datetime import datetime
 
-# Third-party library imports
+# Third-party library imports 
 import openai
 import requests
 import psycopg2

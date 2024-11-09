@@ -1,5 +1,5 @@
 line-bot-sdk
-flask[async]
+flask
 openai
 gunicorn
 langchain
