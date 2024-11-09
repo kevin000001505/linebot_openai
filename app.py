@@ -35,7 +35,7 @@ msg_response = MessageResponse()
 stock = ScrapyRunner()
 
 # stock dictionary
-with open('stock_list.json', 'r') as file:
+with open('stock_list.json', 'r', encoding='utf-8') as file:
     stock_dict = json.load(file)
 
 # AWS S3 access
