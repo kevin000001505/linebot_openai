@@ -59,7 +59,9 @@ def callback():
     signature = request.headers["X-Line-Signature"]
     # get request body as text
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
+    request_info = json.load(body)
+    app.logger.info("Request Info: ", request_info['events'][0])
+    # app.logger.info("Request body: " + body)
     # handle webhook body
     try:
         handler.handle(body, signature)
@@ -87,7 +89,7 @@ def create_quick_reply_buttons(questions):
 
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
-def handle_text_message(event):
+async def handle_text_message(event):
     global current_method
     msg = event.message.text
     if msg == "@clear":
@@ -109,9 +111,9 @@ def handle_text_message(event):
     if current_method == "@stock":
         handle_stock_message(event)
     else:
-        handle_chat_message(event)
+        await handle_chat_message(event)
 
-def handle_chat_message(event):
+async def handle_chat_message(event):
     global last_questions
     msg = event.message.text
     user_id = event.source.user_id
@@ -155,9 +157,9 @@ def handle_chat_message(event):
         if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
             question_index = int(msg) - 1
             select_question = last_questions[question_index]
-            handle_perplexity_request(event, select_question, rephrase=False)
+            await handle_perplexity_request(event, select_question, rephrase=False)
         else:
-            handle_perplexity_request(event, msg)
+            await handle_perplexity_request(event, msg)
 
 def handle_stock_message(event):
     global current_method
