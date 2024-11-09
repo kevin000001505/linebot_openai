@@ -22,10 +22,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatPerplexity
 from langchain_openai import ChatOpenAI
 
-# Async imports
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
 logger = setup_logger()
 
 
@@ -137,7 +133,7 @@ class MessageResponse:
             verbose=True,
         )
 
-    async def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
+    def Perplexity_response(self, user_id, msg, rephrase=False) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(
@@ -150,20 +146,9 @@ class MessageResponse:
                 rephrased_msg = None
                 input_msg = msg
 
-            # Create tasks for concurrent execution
-            loop = asyncio.get_event_loop()
-            with ThreadPoolExecutor() as executor:
-                response_future = loop.run_in_executor(
-                    executor,
-                    lambda: self.conversation_with_summary.invoke({"input": input_msg})
-                )
-                questions_future = loop.run_in_executor(
-                    executor,
-                    lambda: self.further_question(msg, history)
-                )
-                
-                # Wait for both tasks to complete
-                response, further_questions = await asyncio.gather(response_future, questions_future)
+            # Execute sequentially instead of concurrently
+            response = self.conversation_with_summary.invoke({"input": input_msg})
+            further_questions = self.further_question(msg, history)
 
             logger.debug(f"Response: {response}")
             

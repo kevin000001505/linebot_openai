@@ -90,6 +90,16 @@ def handle_text_message(event):
     global current_method
     msg = event.message.text
 
+    if msg == "@clear":
+        try:
+            msg_response.clear_memory()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            logger.info("成功刪除")
+        except Exception as e:
+            logger.error(e)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+        return
+
     # Check if the user wants to switch to stock mode
     if msg == "@stock":
         current_method = "@stock"
@@ -108,15 +118,6 @@ def handle_chat_message(event):
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if msg == "@clear":
-        try:
-            msg_response.clear_memory()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
-            logger.info("成功刪除")
-        except Exception as e:
-            logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
-        return
     if temp_image_path:
         try:
             logger.info("成功收到照片資訊")
@@ -216,7 +217,7 @@ def handle_stock_message(event):
     global current_method
     msg = event.message.text
 
-    if msg == "@exit":
+    if msg == "@exit" or msg == "@chat":
         current_method = "@chat"
         line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
         return
@@ -236,8 +237,6 @@ def handle_stock_message(event):
         # Handle any errors that occur during the crawling process
         logger.error(f"Error handling stock message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later."))
-
-
 
 
 # 處理音訊訊息
@@ -267,7 +266,8 @@ def handle_audio_message(event):
         new_event.message.text = transcribed_text
         
         # Reuse text message handler
-        handle_text_message(new_event)
+        # handle_text_message(new_event)
+        handle_chat_message(new_event)
         
     except Exception as e:
         logger.exception(f"Error handling audio message:{e}")
