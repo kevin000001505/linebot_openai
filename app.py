@@ -36,7 +36,7 @@ stock = ScrapyRunner()
 
 # stock dictionary
 with open('stock_list.json', 'r') as file:
-    stock_dict = json.loads(file)
+    stock_dict = json.load(file)
 
 # AWS S3 access
 aws_access_key_id = Config.AWS_ACCESS_KEY_ID
