@@ -72,6 +72,7 @@ def callback():
 
 
 def create_quick_reply_buttons(questions):
+    # quick response bottoms
     buttons = []
     logger.info(questions)
     for index, question in enumerate(
@@ -89,6 +90,15 @@ def create_quick_reply_buttons(questions):
 def handle_text_message(event):
     global current_method
     msg = event.message.text
+    if msg == "@clear":
+        try:
+            msg_response.clear_memory()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            logger.info("成功刪除")
+        except Exception as e:
+            logger.error(e)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+        return None
 
     # Check if the user wants to switch to stock mode
     if msg == "@stock":
@@ -108,15 +118,6 @@ def handle_chat_message(event):
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if msg == "@clear":
-        try:
-            msg_response.clear_memory()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
-            logger.info("成功刪除")
-        except Exception as e:
-            logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
-        return
     if temp_image_path:
         try:
             logger.info("成功收到照片資訊")
