@@ -7,7 +7,7 @@ from datetime import datetime
 class ScrapyRunner:
     def __init__(self):
         # Set the module name for settings
-        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
+        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.settings')
         self.settings = get_project_settings()
         self.process = CrawlerProcess(self.settings)
         
