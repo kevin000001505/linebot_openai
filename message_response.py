@@ -133,7 +133,7 @@ class MessageResponse:
             verbose=True,
         )
 
-    def Perplexity_response(self, user_id, msg, rephrase=True) -> str:
+    def Perplexity_response(self, user_id, msg, rephrase=False) -> str:
         """Perplexity response."""
         try:
             history = self.get_conversation_history(
