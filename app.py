@@ -1,22 +1,23 @@
 from flask import Flask, request, abort
 from linebot.models import TextMessage, AudioMessage, ImageMessage
-from linebot import AsyncLineBotApi, AsyncWebhookHandler
+from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
+
 # ======自訂的函數庫==========
 from message_response import MessageResponse
 from config import Config
 from utils.logger import setup_logger
-from yahoo_news.runner import run_yahoo_crawler
+
 # ======自訂的函數庫==========
 
 
 # ======python的函數庫==========
 import tempfile, os
-import json
 import boto3
 import traceback
 from botocore.exceptions import NoCredentialsError
+
 # ======python的函數庫==========
 
 logger = setup_logger()
@@ -24,9 +25,9 @@ logger = setup_logger()
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), "static", "tmp")
 # Channel Access Token
-line_bot_api = AsyncLineBotApi(Config.CHANNEL_ACCESS_TOKEN)
+line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
 # Channel Secret
-handler = AsyncWebhookHandler(Config.CHANNEL_SECRET)
+handler = WebhookHandler(Config.CHANNEL_SECRET)
 
 # Initialize the Message_Response class
 msg_response = MessageResponse()
@@ -44,25 +45,17 @@ S3_BUCKET = Config.S3_BUCKET
 # global variable to store the questions
 last_questions = []
 
-# Global variable to track the current method
-current_method = "@chat"
-
-# Stock Dict
-with open('stock_list.json', 'r', encoding='utf-8') as json_file:
-    stock_dict = json.load(json_file)
-
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
-async def callback():  # Make callback async
+def callback():
     # get X-Line-Signature header value
     signature = request.headers["X-Line-Signature"]
     # get request body as text
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
-    
     # handle webhook body
     try:
-        await handler.handle(body, signature)  # Await the handler
+        handler.handle(body, signature)
     except InvalidSignatureError:
         logger.error(
             "Invalid signature. Please check your channel access token/channel secret."
@@ -72,7 +65,6 @@ async def callback():  # Make callback async
 
 
 def create_quick_reply_buttons(questions):
-    # quick response bottoms
     buttons = []
     logger.info(questions)
     for index, question in enumerate(
@@ -85,51 +77,65 @@ def create_quick_reply_buttons(questions):
     return buttons
 
 
+def send_perplexity_response(event, answer, questions=None):
+    """Helper function to send formatted Perplexity responses"""
+    global last_questions
+    
+    if not questions:
+        messages = [
+            TextSendMessage(text=answer),
+            TextSendMessage(text="請提供更詳細的問題"),
+        ]
+    else:
+        last_questions = questions.split("\n")
+        quick_reply_buttons = create_quick_reply_buttons(last_questions)
+        messages = [
+            TextSendMessage(text=answer),
+            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
+            TextSendMessage(
+                text="選擇一個問題編號來獲取更多信息",
+                quick_reply=QuickReply(items=quick_reply_buttons),
+            ),
+        ]
+    
+    line_bot_api.reply_message(event.reply_token, messages)
+
+def handle_perplexity_request(event, msg, rephrase=True):
+    """Helper function to handle Perplexity API calls with error handling"""
+    try:
+        answer, questions = msg_response.Perplexity_response(
+            user_id=event.source.user_id,
+            msg=msg,
+            rephrase=rephrase
+        )
+        send_perplexity_response(event, answer, questions)
+    except Exception as e:
+        logger.exception(traceback.format_exc())
+        logger.error(e)
+        line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+        )
+
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
-async def handle_text_message(event):
-    global current_method
-    msg = event.message.text
-    if msg == "@clear":
-        try:
-            msg_response.clear_memory()
-            await line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage("已刪除歷史紀錄")
-            )
-            logger.info("成功刪除")
-        except Exception as e:
-            logger.error(e)
-            await line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage("刪除歷史紀錄出錯")
-            )
-        return None
-
-    # Check if the user wants to switch to stock mode
-    if msg == "@stock":
-        current_method = "@stock"
-        await line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage("股票模式開啟, 請輸入股票代碼或名字")
-        )
-        return
-    # Delegate to the appropriate handler based on the current method
-    if current_method == "@stock":
-        await handle_stock_message(event)
-    else:
-        await handle_chat_message(event)
-
-async def handle_chat_message(event):
+def handle_text_message(event):
     global last_questions
     msg = event.message.text
     user_id = event.source.user_id
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if temp_image_path:
+    if msg == "0" or "@clear":
         try:
-            logger.info("成功收到照片資訊")
+            msg_response.clear_memory()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+        except Exception as e:
+            logger.error(e)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+            return
+    elif temp_image_path:
+        try:
             # Process the image with the additional information
             response = msg_response.process_image_with_info(temp_image_path, msg)
 
@@ -154,93 +160,64 @@ async def handle_chat_message(event):
                     quick_reply=QuickReply(items=quick_reply_buttons),
                 ),
             ]
-            await line_bot_api.reply_message(event.reply_token, messages)
+            line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(f"Error processing image with info: {e}")
-            await line_bot_api.reply_message(
+            line_bot_api.reply_message(
                 event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
             )
     else:
         if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
             question_index = int(msg) - 1
             select_question = last_questions[question_index]
-            await handle_perplexity_request(event, select_question, rephrase=False)
+            handle_perplexity_request(event, select_question, rephrase=False)
         else:
-            await handle_perplexity_request(event, msg)
-
-async def handle_stock_message(event):
-    global current_method
-    msg = event.message.text
-
-    if msg == "@exit" or "@chat":
-        current_method = "@chat"
-        await line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage("Exiting stock mode.")
-        )
-        return
-    try:
-        stock_id = int(msg)
-        # Run the Scrapy crawler with the stock ID
-        run_yahoo_crawler(stock_id)
-        await line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage(f"Handling stock id: {stock_id}")
-        )
-        # Reply the stock information to LLM
-    except ValueError:
-        try:
-            stock_id = stock_dict[msg]
-        except KeyError:
-            # Use LLM to clarify the right stock name or integer
-            await line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼")
-            )
-    except Exception as e:
-        # Handle any errors that occur during the crawling process
-        logger.error(f"Error handling stock message: {e}")
-        await line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage("An error occurred while processing your request. Please try again later.")
-        )
-
-
+            handle_perplexity_request(event, msg)
 
 
 # 處理音訊訊息
 @handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
-    
+    user_id = event.source.user_id
     if not audio_content:
         logger.error("No audio content found.")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="無法獲取音訊內容。"))
         return
-        
     try:
-        # Save and transcribe audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tf:
             for chunk in audio_content.iter_content():
                 tf.write(chunk)
             tempfile_path = tf.name
             logger.info(f"Audio saved to temporary file: {tempfile_path}")
 
-        transcribed_text = msg_response.transcribe_audio(tempfile_path)
-        if transcribed_text.startswith("Error"):
-            raise Exception(transcribed_text)
+        msg = msg_response.transcribe_audio(tempfile_path)
+        if msg.startswith("Error"):
+            raise Exception(msg)
 
-        # Create a new event object with the transcribed text
-        new_event = event
-        new_event.message.text = transcribed_text
-        
-        # Reuse text message handler
-        handle_text_message(new_event)
-        
+        # Process the transcribed text
+        Perplexity_answer, questions = msg_response.Perplexity_response(
+            user_id=user_id,
+            msg=msg,
+        )
+        last_questions = questions.split("\n")
+
+        quick_reply_buttons = create_quick_reply_buttons(last_questions)
+
+        messages = [
+            TextSendMessage(text=Perplexity_answer),
+            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
+            TextSendMessage(
+                text="選擇一個問題編號來獲取更多信息",
+                quick_reply=QuickReply(items=quick_reply_buttons),
+            ),
+        ]
+        line_bot_api.reply_message(event.reply_token, messages)
     except Exception as e:
         logger.exception(f"Error handling audio message:{e}")
+        error_message = "處理您的音訊訊息時發生錯誤，請稍後再試。"
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text="處理您的音訊訊息時發生錯誤，請稍後再試。")
+            event.reply_token, TextSendMessage(text=error_message)
         )
     finally:
         # Clean up the temporary file
@@ -302,47 +279,6 @@ def welcome(event):
     name = profile.display_name
     message = TextSendMessage(text=f"{name}歡迎加入, 輸入 0 來清除之前的歷史對話")
     line_bot_api.reply_message(event.reply_token, message)
-
-
-def send_perplexity_response(event, answer, questions=None):
-    """Helper function to send formatted Perplexity responses"""
-    global last_questions
-    
-    if not questions:
-        messages = [
-            TextSendMessage(text=answer),
-            TextSendMessage(text="請提供更詳細的問題"),
-        ]
-    else:
-        last_questions = questions.split("\n")
-        quick_reply_buttons = create_quick_reply_buttons(last_questions)
-        messages = [
-            TextSendMessage(text=answer),
-            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-            TextSendMessage(
-                text="選擇一個問題編號來獲取更多信息",
-                quick_reply=QuickReply(items=quick_reply_buttons),
-            ),
-        ]
-    
-    line_bot_api.reply_message(event.reply_token, messages)
-
-async def handle_perplexity_request(event, msg, rephrase=True):
-    """Helper function to handle Perplexity API calls with error handling"""
-    try:
-        answer, questions = await msg_response.Perplexity_response(
-            user_id=event.source.user_id,
-            msg=msg,
-            rephrase=rephrase
-        )
-        send_perplexity_response(event, answer, questions)
-    except Exception as e:
-        logger.exception(traceback.format_exc())
-        logger.error(e)
-        line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
-        )
 
 
 if __name__ == "__main__":
