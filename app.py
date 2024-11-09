@@ -126,7 +126,7 @@ def handle_text_message(event):
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if msg == "0" or "@clear":
+    if msg == "0" or msg == "@clear":
         try:
             msg_response.clear_memory()
             line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
