@@ -130,6 +130,7 @@ def handle_text_message(event):
     global current_method
     msg = event.message.text
 
+    # Handle clear command
     if msg == "@clear":
         try:
             msg_response.clear_memory()
@@ -140,12 +141,17 @@ def handle_text_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
         return
 
-    # Check if the user wants to switch to stock mode
+    # Handle mode switching commands
     if msg == "@stock":
         current_method = "@stock"
         line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字"))
         return
-    # Delegate to the appropriate handler based on the current method
+    elif msg == "@chat" or msg == "@exit":
+        current_method = "@chat"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+        return
+
+    # Handle messages based on current mode
     if current_method == "@stock":
         handle_stock_message(event)
     else:
@@ -231,10 +237,10 @@ def handle_stock_message(event):
     global current_method
     msg = event.message.text
 
-    if msg == "@exit" or msg == "@chat":
-        current_method = "@chat"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
-        return
+    # if msg == "@exit" or msg == "@chat":
+    #     current_method = "@chat"
+    #     line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+    #     return
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
