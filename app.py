@@ -14,6 +14,7 @@ from yahoo_news.runner import run_yahoo_crawler
 
 # ======python的函數庫==========
 import tempfile, os
+import json
 import boto3
 import traceback
 from botocore.exceptions import NoCredentialsError
@@ -48,8 +49,8 @@ last_questions = []
 current_method = "@chat"
 
 # Stock Dict
-with open('stock_list.json', 'r') as json_file:
-    stock_dict = json_file
+with open('stock_list.json', 'r', encoding='utf-8') as json_file:
+    stock_dict = json.load(json_file)
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
