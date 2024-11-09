@@ -12,4 +12,3 @@ pyquery
 redis
 scrapy-redis
 psycopg2
-googlemaps

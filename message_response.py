@@ -9,7 +9,7 @@ from datetime import datetime
 import openai
 import requests
 import psycopg2
-import googlemaps
+# import googlemaps
 
 # Custom/Local imports
 from config import Config
@@ -335,33 +335,33 @@ class MessageResponse:
         except Exception as e:
             logger.error(f"Error saving chat history: {e}")
 
-    def search_google_map(self, msg: str) -> str:
-        # Initialize the Google Maps client with your API key
-        gmaps = googlemaps.Client(key=Config.GOOGLE_MAP_API)
+    # def search_google_map(self, msg: str) -> str:
+    #     # Initialize the Google Maps client with your API key
+    #     gmaps = googlemaps.Client(key=Config.GOOGLE_MAP_API)
 
-        # Search for a place using text
-        query = self.location_info_conversation(msg)
-        places_result = gmaps.places(query)
+    #     # Search for a place using text
+    #     query = self.location_info_conversation(msg)
+    #     places_result = gmaps.places(query)
 
-        for place in places_result['results']:
-            place_id = place['place_id']  # Extract place_id for each place
+    #     for place in places_result['results']:
+    #         place_id = place['place_id']  # Extract place_id for each place
 
-            # Step 3: Use the place_id to get detailed information about the place
-            place_details = gmaps.place(place_id=place_id)
+    #         # Step 3: Use the place_id to get detailed information about the place
+    #         place_details = gmaps.place(place_id=place_id)
 
-            # Step 4: Extract place name and reviews (if available)
-            name = place_details['result']['name']
-            print(f"Place: {name}")
+    #         # Step 4: Extract place name and reviews (if available)
+    #         name = place_details['result']['name']
+    #         print(f"Place: {name}")
 
-            reviews = place_details['result'].get('reviews', [])
-            if reviews:
-                print(f"Reviews for {name}:")
-                for review in reviews:
-                    author = review.get('author_name', 'Anonymous')
-                    rating = review.get('rating', 'No rating')
-                    text = review.get('text', 'No comment')
-                    print(f"- {author} (Rating: {rating}): {text}\n")
-            else:
-                print(f"No reviews available for {name}\n")
-        pass
+    #         reviews = place_details['result'].get('reviews', [])
+    #         if reviews:
+    #             print(f"Reviews for {name}:")
+    #             for review in reviews:
+    #                 author = review.get('author_name', 'Anonymous')
+    #                 rating = review.get('rating', 'No rating')
+    #                 text = review.get('text', 'No comment')
+    #                 print(f"- {author} (Rating: {rating}): {text}\n")
+    #         else:
+    #             print(f"No reviews available for {name}\n")
+    #     pass
 

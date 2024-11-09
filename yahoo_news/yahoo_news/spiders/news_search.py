@@ -90,6 +90,12 @@ class ContentSpider(RedisSpider):
     name = "content"
     redis_key = "links"
 
+    def __init__(self, *args, **kwargs):
+        # Set the Redis URL here
+        self.redis_url = settings.REDIS_URL
+        self.redis_conn = redis.StrictRedis.from_url(self.redis_url)
+        super().__init__(*args, **kwargs)
+
     def make_request_from_data(self, data):
         # Parse the JSON data from Redis
         try:
