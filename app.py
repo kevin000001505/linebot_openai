@@ -1,6 +1,6 @@
 from flask import Flask, request, abort
 from linebot.models import TextMessage, AudioMessage, ImageMessage
-from linebot import LineBotApi, WebhookHandler
+from linebot import AsyncLineBotApi, AsyncWebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
 # ======自訂的函數庫==========
@@ -24,9 +24,9 @@ logger = setup_logger()
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), "static", "tmp")
 # Channel Access Token
-line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
+line_bot_api = AsyncLineBotApi(Config.CHANNEL_ACCESS_TOKEN)
 # Channel Secret
-handler = WebhookHandler(Config.CHANNEL_SECRET)
+handler = AsyncWebhookHandler(Config.CHANNEL_SECRET)
 
 # Initialize the Message_Response class
 msg_response = MessageResponse()
@@ -93,21 +93,30 @@ async def handle_text_message(event):
     if msg == "@clear":
         try:
             msg_response.clear_memory()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            await line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage("已刪除歷史紀錄")
+            )
             logger.info("成功刪除")
         except Exception as e:
             logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+            await line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage("刪除歷史紀錄出錯")
+            )
         return None
 
     # Check if the user wants to switch to stock mode
     if msg == "@stock":
         current_method = "@stock"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字"))
+        await line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage("股票模式開啟, 請輸入股票代碼或名字")
+        )
         return
     # Delegate to the appropriate handler based on the current method
     if current_method == "@stock":
-        handle_stock_message(event)
+        await handle_stock_message(event)
     else:
         await handle_chat_message(event)
 
@@ -145,10 +154,10 @@ async def handle_chat_message(event):
                     quick_reply=QuickReply(items=quick_reply_buttons),
                 ),
             ]
-            line_bot_api.reply_message(event.reply_token, messages)
+            await line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(f"Error processing image with info: {e}")
-            line_bot_api.reply_message(
+            await line_bot_api.reply_message(
                 event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
             )
     else:
@@ -159,30 +168,42 @@ async def handle_chat_message(event):
         else:
             await handle_perplexity_request(event, msg)
 
-def handle_stock_message(event):
+async def handle_stock_message(event):
     global current_method
     msg = event.message.text
 
     if msg == "@exit" or "@chat":
         current_method = "@chat"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+        await line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage("Exiting stock mode.")
+        )
         return
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
         run_yahoo_crawler(stock_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
+        await line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage(f"Handling stock id: {stock_id}")
+        )
         # Reply the stock information to LLM
     except ValueError:
         try:
             stock_id = stock_dict[msg]
         except KeyError:
             # Use LLM to clarify the right stock name or integer
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼"))
+            await line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼")
+            )
     except Exception as e:
         # Handle any errors that occur during the crawling process
         logger.error(f"Error handling stock message: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later."))
+        await line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage("An error occurred while processing your request. Please try again later.")
+        )
 
 
 
