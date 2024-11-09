@@ -120,21 +120,38 @@ def handle_perplexity_request(event, msg, rephrase=True):
 # 處理文本訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
+    global current_method
+    msg = event.message.text
+
+    if msg == "@clear":
+        try:
+            msg_response.clear_memory()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            logger.info("成功刪除")
+        except Exception as e:
+            logger.error(e)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+        return
+
+    # Check if the user wants to switch to stock mode
+    if msg == "@stock":
+        current_method = "@stock"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字"))
+        return
+    # Delegate to the appropriate handler based on the current method
+    if current_method == "@stock":
+        handle_stock_message(event)
+    else:
+        handle_chat_message(event)
+
+def handle_chat_message(event):
     global last_questions
     msg = event.message.text
     user_id = event.source.user_id
 
     # Check if there's a stored image for this user
     temp_image_path = msg_response.get_temp_image(user_id)
-    if msg == "0" or msg == "@clear":
-        try:
-            msg_response.clear_memory()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
-        except Exception as e:
-            logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
-            return
-    elif temp_image_path:
+    if temp_image_path:
         try:
             # Process the image with the additional information
             response = msg_response.process_image_with_info(temp_image_path, msg)
@@ -172,7 +189,61 @@ def handle_text_message(event):
             select_question = last_questions[question_index]
             handle_perplexity_request(event, select_question, rephrase=False)
         else:
-            handle_perplexity_request(event, msg)
+            try:
+                Perplexity_answer, questions = msg_response.Perplexity_response(
+                    user_id=user_id,
+                    msg=msg,
+                )
+                if questions:
+                    last_questions = questions.split("\n")
+                    quick_reply_buttons = create_quick_reply_buttons(last_questions)
+
+                    messages = [
+                        TextSendMessage(text=Perplexity_answer),
+                        TextSendMessage(text=f"以下是後續問題：\n{questions}"),
+                        TextSendMessage(
+                            text="選擇一個問題編號來獲取更多信息",
+                            quick_reply=QuickReply(items=quick_reply_buttons),
+                        ),
+                    ]
+                    line_bot_api.reply_message(event.reply_token, messages)
+                else:
+                    messages = [
+                        TextSendMessage(text=Perplexity_answer),
+                        TextSendMessage(text="請提供更詳細的問題"),
+                    ]
+                    line_bot_api.reply_message(event.reply_token, messages)
+            except Exception as e:
+                logger.exception(traceback.format_exc())
+                logger.error(e)
+                line_bot_api.reply_message(
+                    event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+                )
+
+def handle_stock_message(event):
+    global current_method
+    msg = event.message.text
+
+    if msg == "@exit" or msg == "@chat":
+        current_method = "@chat"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+        return
+    try:
+        stock_id = int(msg)
+        # Run the Scrapy crawler with the stock ID
+        run_yahoo_crawler(stock_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
+        # Reply the stock information to LLM
+    except ValueError:
+        try:
+            stock_id = stock_dict[msg]
+        except KeyError:
+            # Use LLM to clarify the right stock name or integer
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼"))
+    except Exception as e:
+        # Handle any errors that occur during the crawling process
+        logger.error(f"Error handling stock message: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later."))
 
 
 # 處理音訊訊息
@@ -195,24 +266,14 @@ def handle_audio_message(event):
         if msg.startswith("Error"):
             raise Exception(msg)
 
-        # Process the transcribed text
-        Perplexity_answer, questions = msg_response.Perplexity_response(
-            user_id=user_id,
-            msg=msg,
-        )
-        last_questions = questions.split("\n")
-
-        quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-        messages = [
-            TextSendMessage(text=Perplexity_answer),
-            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-            TextSendMessage(
-                text="選擇一個問題編號來獲取更多信息",
-                quick_reply=QuickReply(items=quick_reply_buttons),
-            ),
-        ]
-        line_bot_api.reply_message(event.reply_token, messages)
+        # Create a new event object with the transcribed text
+        new_event = event
+        new_event.message.text = transcribed_text
+        
+        # Reuse text message handler
+        # handle_text_message(new_event)
+        handle_chat_message(new_event)
+        
     except Exception as e:
         logger.exception(f"Error handling audio message:{e}")
         error_message = "處理您的音訊訊息時發生錯誤，請稍後再試。"
