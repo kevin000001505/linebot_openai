@@ -55,15 +55,15 @@ class PostgresPipeline:
     def db_insert(self, item):
         try:
             self.cur.execute("""
-                INSERT INTO articles (stock_id, title, content, date, url)
+                INSERT INTO articles (stock_id, title, date, url, content)
                 VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO NOTHING
             """, (
                 item['stock_id'],
                 item['title'],
-                item['content'],
                 item['date'],
-                item['url']
+                item['url'],
+                item['content'],
             ))
             self.conn.commit()
             return True
@@ -137,10 +137,10 @@ class PostgresPipeline:
                 id SERIAL PRIMARY KEY,
                 stock_id INTEGER NOT NULL,
                 title TEXT,
-                content TEXT,
                 date TIMESTAMP,
                 url TEXT UNIQUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                content TEXT,
             )
         """)
         self.conn.commit()
