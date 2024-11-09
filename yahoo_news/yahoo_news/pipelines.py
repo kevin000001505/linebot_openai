@@ -140,7 +140,7 @@ class PostgresPipeline:
                 date TIMESTAMP,
                 url TEXT UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                content TEXT,
+                content TEXT
             )
         """)
         self.conn.commit()

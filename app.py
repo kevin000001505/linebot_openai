@@ -237,10 +237,6 @@ def handle_stock_message(event):
     global current_method
     msg = event.message.text
 
-    # if msg == "@exit" or msg == "@chat":
-    #     current_method = "@chat"
-    #     line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
-    #     return
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
