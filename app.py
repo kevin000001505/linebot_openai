@@ -155,69 +155,15 @@ def handle_chat_message(event):
         if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
             question_index = int(msg) - 1
             select_question = last_questions[question_index]
-            try:
-                # Modify the response that LLM don't need to rephrase it.
-                Perplexity_answer, new_questions = msg_response.Perplexity_response(
-                    user_id=user_id,
-                    msg=select_question,
-                    rephrase=False,
-                )
-                last_questions = new_questions.split("\n")
-                quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-                messages = [
-                    TextSendMessage(text=Perplexity_answer),
-                    TextSendMessage(text=f"以下是後續問題：\n{new_questions}"),
-                    TextSendMessage(
-                        text="選擇一個問題編號來獲取更多信息",
-                        quick_reply=QuickReply(items=quick_reply_buttons),
-                    ),
-                ]
-                logger.debug(f"Reply Message:{messages}")
-                line_bot_api.reply_message(event.reply_token, messages)
-            except Exception as e:
-                logger.exception(traceback.format_exc())
-                logger.error(e)
-                line_bot_api.reply_message(
-                    event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
-                )
+            handle_perplexity_request(event, select_question, rephrase=False)
         else:
-            try:
-                Perplexity_answer, questions = msg_response.Perplexity_response(
-                    user_id=user_id,
-                    msg=msg,
-                )
-                if questions:
-                    last_questions = questions.split("\n")
-                    quick_reply_buttons = create_quick_reply_buttons(last_questions)
-
-                    messages = [
-                        TextSendMessage(text=Perplexity_answer),
-                        TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-                        TextSendMessage(
-                            text="選擇一個問題編號來獲取更多信息",
-                            quick_reply=QuickReply(items=quick_reply_buttons),
-                        ),
-                    ]
-                    line_bot_api.reply_message(event.reply_token, messages)
-                else:
-                    messages = [
-                        TextSendMessage(text=Perplexity_answer),
-                        TextSendMessage(text="請提供更詳細的問題"),
-                    ]
-                    line_bot_api.reply_message(event.reply_token, messages)
-            except Exception as e:
-                logger.exception(traceback.format_exc())
-                logger.error(e)
-                line_bot_api.reply_message(
-                    event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
-                )
+            handle_perplexity_request(event, msg)
 
 def handle_stock_message(event):
     global current_method
     msg = event.message.text
 
-    if msg == "@exit":
+    if msg == "@exit" or "@chat":
         current_method = "@chat"
         line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
         return
@@ -335,6 +281,47 @@ def welcome(event):
     name = profile.display_name
     message = TextSendMessage(text=f"{name}歡迎加入, 輸入 0 來清除之前的歷史對話")
     line_bot_api.reply_message(event.reply_token, message)
+
+
+def send_perplexity_response(event, answer, questions=None):
+    """Helper function to send formatted Perplexity responses"""
+    global last_questions
+    
+    if not questions:
+        messages = [
+            TextSendMessage(text=answer),
+            TextSendMessage(text="請提供更詳細的問題"),
+        ]
+    else:
+        last_questions = questions.split("\n")
+        quick_reply_buttons = create_quick_reply_buttons(last_questions)
+        messages = [
+            TextSendMessage(text=answer),
+            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
+            TextSendMessage(
+                text="選擇一個問題編號來獲取更多信息",
+                quick_reply=QuickReply(items=quick_reply_buttons),
+            ),
+        ]
+    
+    line_bot_api.reply_message(event.reply_token, messages)
+
+async def handle_perplexity_request(event, msg, rephrase=True):
+    """Helper function to handle Perplexity API calls with error handling"""
+    try:
+        answer, questions = await msg_response.Perplexity_response(
+            user_id=event.source.user_id,
+            msg=msg,
+            rephrase=rephrase
+        )
+        send_perplexity_response(event, answer, questions)
+    except Exception as e:
+        logger.exception(traceback.format_exc())
+        logger.error(e)
+        line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+        )
 
 
 if __name__ == "__main__":
