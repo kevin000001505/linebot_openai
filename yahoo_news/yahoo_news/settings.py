@@ -20,7 +20,7 @@ SPIDER_MODULES = ["yahoo_news.yahoo_news.spiders"]
 NEWSPIDER_MODULE = "yahoo_news.yahoo_news.spiders"
 
 # REDIS_HOST = "line-chatbot.redis.cache.windows.net"
-REDIS_HOST = "redis" # For docker
+REDIS_HOST = "red-csne29aj1k6c73b1t0g0"
 # REDIS_HOST = "localhost"
 REDIS_URL = "redis://red-csne29aj1k6c73b1t0g0:6379"
 REDIS_PORT = 6379
