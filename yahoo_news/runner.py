@@ -3,7 +3,6 @@ import sys
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import logging
-from datetime import datetime
 
 class ScrapyRunner:
     def __init__(self):

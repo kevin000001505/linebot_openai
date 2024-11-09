@@ -3,7 +3,6 @@ import sys
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import logging
-from datetime import datetime
 
 class ScrapyRunner:
     def __init__(self):
@@ -30,10 +29,9 @@ class ScrapyRunner:
             logging.error(f"An error occurred: {str(e)}")
             raise e
 
-def run_yahoo_crawler(stock_id):
-    try:
-        runner = ScrapyRunner()
-        runner.Extract_Stock_info(stock_id=str(stock_id))
-    except Exception as e:
-        logging.error(f"Error in crawler: {str(e)}")
-        raise e
+    def run_yahoo_crawler(self, stock_id):
+        try:
+            self.Extract_Stock_info(stock_id=str(stock_id))
+        except Exception as e:
+            logging.error(f"Error in crawler: {str(e)}")
+            raise e
