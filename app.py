@@ -10,6 +10,7 @@ from config import Config
 from utils.extract_data import pg_extract
 from utils.logger import setup_logger
 from stock_response import ScrapyRunner
+from celery_config import make_celery
 # ======自訂的函數庫==========
 
 
@@ -30,6 +31,12 @@ static_tmp_path = os.path.join(os.path.dirname(__file__), "static", "tmp")
 line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
 # Channel Secret
 handler = WebhookHandler(Config.CHANNEL_SECRET)
+
+app.config.update(
+    CELERY_BROKER_URL=os.environ.get('REDIS_URL'),
+    CELERY_RESULT_BACKEND=os.environ.get('REDIS_URL')
+)
+celery = make_celery(app)
 
 # Initialize the Message_Response class and ScrapyRunner class
 msg_response = MessageResponse()
