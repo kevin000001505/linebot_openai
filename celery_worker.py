@@ -1,19 +1,19 @@
-# tasks.py
+# celery_worker.py
+
 import os
 import sys
 from celery_config import make_celery
-from flask import Flask
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import reactor, defer
 import logging
 from threading import Thread
 
-# Initialize Flask application
-app = Flask(__name__)
-
-# Initialize Celery with Flask app context
-celery = make_celery(app)
+# Initialize Celery
+celery = make_celery(
+    broker_url=os.environ.get('REDIS_URL'),
+    backend_url=os.environ.get('REDIS_URL')
+)
 
 class ScrapyRunner:
     def __init__(self):
@@ -22,7 +22,7 @@ class ScrapyRunner:
         sys.path.insert(0, project_root)
         
         # Set the Scrapy settings module environment variable
-        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')  # Adjust based on your scrapy_project folder name
+        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
         
         # Get Scrapy project settings
         self.settings = get_project_settings()
