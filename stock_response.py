@@ -1,3 +1,4 @@
+# tasks.py
 import os
 import sys
 from celery_config import make_celery
@@ -21,7 +22,7 @@ class ScrapyRunner:
         sys.path.insert(0, project_root)
         
         # Set the Scrapy settings module environment variable
-        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
+        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')  # Adjust based on your scrapy_project folder name
         
         # Get Scrapy project settings
         self.settings = get_project_settings()
@@ -35,10 +36,10 @@ class ScrapyRunner:
     def start_reactor(self):
         if not reactor.running:
             def run_reactor():
-                reactor.run(installSignalHandlers=0)
+                reactor.run(installSignalHandlers=0)  # Don't install signal handlers
             reactor_thread = Thread(target=run_reactor, daemon=True)
             reactor_thread.start()
-    
+
     @defer.inlineCallbacks
     def crawl_spiders(self, stock_id):
         """
