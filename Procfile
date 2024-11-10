@@ -1,1 +1,1 @@
-worker: celery -A stock_response worker --loglevel=info
+worker: celery -A celery_worker worker --loglevel=info

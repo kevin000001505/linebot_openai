@@ -3,7 +3,7 @@ import os
 
 def make_celery(app):
     celery = Celery(
-        "stock_response",
+        "celery_worker",
         broker=os.environ.get('REDIS_URL'),
         backend=os.environ.get('REDIS_URL')
     )
