@@ -9,8 +9,7 @@ from message_response import MessageResponse
 from config import Config
 from utils.extract_data import pg_extract
 from utils.logger import setup_logger
-from celery_worker import ScrapyRunner
-from celery_config import make_celery
+from celery_worker import extract_stock_info
 # ======自訂的函數庫==========
 
 
@@ -36,11 +35,9 @@ app.config.update(
     CELERY_BROKER_URL=os.environ.get('REDIS_URL'),
     CELERY_RESULT_BACKEND=os.environ.get('REDIS_URL')
 )
-celery = make_celery(app)
 
 # Initialize the Message_Response class and ScrapyRunner class
 msg_response = MessageResponse()
-stock = ScrapyRunner()
 
 # stock dictionary
 with open('stock_list.json', 'r', encoding='utf-8') as file:
