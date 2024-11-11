@@ -7,5 +7,7 @@ scrapy
 pyquery
 redis
 scrapy-redis
+langchain-openai
+langchain
 psycopg2
 celery
