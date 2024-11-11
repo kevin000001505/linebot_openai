@@ -1,7 +1,7 @@
 # worker/celery_worker.py
 
 import os
-from celery_config import make_celery
+from worker.celery_config import make_celery
 import logging
 
 # Configure logging
@@ -22,7 +22,7 @@ def extract_stock_info(self, stock_id='2330'):
     try:
         logging.info(f"Celery task started for stock_id: {stock_id}")
         # Import ScrapyRunner within the task to prevent initialization during import
-        from scrapy_runner import ScrapyRunner
+        from worker.scrapy_runner import ScrapyRunner
         scraper = ScrapyRunner()
         scraper.crawl_spiders(stock_id)
     except Exception as e:
