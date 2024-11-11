@@ -16,8 +16,8 @@ class ScrapyRunner:
         logging.info(f"ScrapyRunner initialized in {project_root}")
 
         # Set the Scrapy settings module environment variable
-        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.settings')
-        logging.info("SCRAPY_SETTINGS_MODULE set to 'yahoo_news.settings'")
+        os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
+        logging.info("SCRAPY_SETTINGS_MODULE set to 'yahoo_news.yahoo_news.settings'")
 
         # Get Scrapy project settings
         self.settings = get_project_settings()
