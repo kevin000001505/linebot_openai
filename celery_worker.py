@@ -1,6 +1,7 @@
 # celery_worker.py
 
 import os
+import sys
 from celery_config import make_celery
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
