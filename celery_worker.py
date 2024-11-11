@@ -2,18 +2,21 @@
 
 import os
 import sys
-from celery_config import make_celery
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.project import get_project_settings
-from twisted.internet import reactor, defer
 import logging
 from threading import Thread
+from celery_config import make_celery
+
 
 # Initialize Celery
 celery = make_celery(
     broker_url=os.environ.get('REDIS_URL'),
     backend_url=os.environ.get('REDIS_URL')
 )
+
+# Now import Twisted and Scrapy modules
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.project import get_project_settings
+from twisted.internet import reactor, defer
 
 class ScrapyRunner:
     def __init__(self):
