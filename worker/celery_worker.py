@@ -31,7 +31,7 @@ except ModuleNotFoundError as e:
 
 # Import ScrapyRunner after ensuring project_root is in sys.path
 try:
-    from scrapy_runner import ScrapyRunner
+    from worker.scrapy_runner import ScrapyRunner
     logging.info("Successfully imported 'ScrapyRunner' from 'scrapy_runner'")
 except ModuleNotFoundError as e:
     logging.error(f"Failed to import 'ScrapyRunner': {e}")
@@ -43,7 +43,7 @@ celery = make_celery(
     backend_url=os.environ.get('REDIS_URL')
 )
 
-@celery.task(name='celery_worker.extract_stock_info', bind=True, max_retries=3, default_retry_delay=60)
+@celery.task(name='worker.celery_worker.extract_stock_info', bind=True, max_retries=3, default_retry_delay=60)
 def extract_stock_info(self, stock_id='2330'):
     """
     Celery task to execute Scrapy spiders for a given stock_id.
