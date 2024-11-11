@@ -2,18 +2,28 @@
 
 import os
 import sys
+import logging
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import reactor, defer
-import logging
 from threading import Thread
 
 class ScrapyRunner:
     def __init__(self):
-        # Determine the project root directory
-        project_root = os.path.dirname(os.path.abspath(__file__))
-        sys.path.insert(0, project_root)
-        logging.info(f"ScrapyRunner initialized in {project_root}")
+        # Determine the current directory (worker/)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Determine the project root directory (one level up)
+        project_root = os.path.dirname(current_dir)
+
+        # Append the project root to sys.path if not already present
+        if project_root not in sys.path:
+            sys.path.append(project_root)
+            logging.info(f"Appended project root '{project_root}' to sys.path")
+        else:
+            logging.info(f"Project root '{project_root}' already in sys.path")
+
+        logging.info(f"ScrapyRunner initialized in {current_dir}")
 
         # Set the Scrapy settings module environment variable
         os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
