@@ -245,7 +245,7 @@ def handle_stock_message(event):
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
-        stock.extract_stock_info(stock_id)
+        extract_stock_info(stock_id)
         # line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
         article_list = pg_extract(stock_id=stock_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Extracting the number of articles: {len(article_list)}"))
