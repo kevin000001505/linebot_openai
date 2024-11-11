@@ -2,21 +2,23 @@
 
 import os
 import sys
+from celery_config import make_celery
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.project import get_project_settings
+from twisted.internet import reactor, defer
 import logging
 from threading import Thread
-from celery_config import make_celery
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
+# Log the current reactor
+logging.info(f"Current Twisted reactor: {type(reactor).__name__}")
 # Initialize Celery
 celery = make_celery(
     broker_url=os.environ.get('REDIS_URL'),
     backend_url=os.environ.get('REDIS_URL')
 )
-
-# Now import Twisted and Scrapy modules
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.project import get_project_settings
-from twisted.internet import reactor, defer
 
 class ScrapyRunner:
     def __init__(self):
@@ -71,6 +73,9 @@ def extract_stock_info(self, stock_id='2330'):
     Retries up to 3 times in case of failure, waiting 60 seconds between retries.
     """
     try:
+        logging.info(f"Celery task started for stock_id: {stock_id}")
+        # Initialize ScrapyRunner within the task
+        scraper = ScrapyRunner()
         # Trigger the crawling process
         yield scraper.crawl_spiders(stock_id)
     except Exception as e:
