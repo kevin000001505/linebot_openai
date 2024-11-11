@@ -1,44 +1,44 @@
+# celery_worker.py
+
 import os
-import sys
 from celery_config import make_celery
-from flask import Flask
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import reactor, defer
 import logging
 from threading import Thread
 
-# Initialize Flask application
-app = Flask(__name__)
-
-# Initialize Celery with Flask app context
-celery = make_celery(app)
+# Initialize Celery
+celery = make_celery(
+    broker_url=os.environ.get('REDIS_URL'),
+    backend_url=os.environ.get('REDIS_URL')
+)
 
 class ScrapyRunner:
     def __init__(self):
         # Determine the project root directory
         project_root = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, project_root)
-        
+
         # Set the Scrapy settings module environment variable
         os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
-        
+
         # Get Scrapy project settings
         self.settings = get_project_settings()
-        
+
         # Initialize CrawlerRunner with project settings
         self.runner = CrawlerRunner(self.settings)
-        
+
         # Start the Twisted reactor in a separate thread
         self.start_reactor()
-        
+
     def start_reactor(self):
         if not reactor.running:
             def run_reactor():
-                reactor.run(installSignalHandlers=0)
+                reactor.run(installSignalHandlers=0)  # Don't install signal handlers
             reactor_thread = Thread(target=run_reactor, daemon=True)
             reactor_thread.start()
-    
+
     @defer.inlineCallbacks
     def crawl_spiders(self, stock_id):
         """
@@ -47,10 +47,10 @@ class ScrapyRunner:
         try:
             # Start crawling with 'news_search' spider
             yield self.runner.crawl('news_search', stock_id=str(stock_id))
-            
+
             # Start crawling with 'content' spider
             yield self.runner.crawl('content', stock_id=str(stock_id))
-            
+
             logging.info(f"Crawling completed for stock_id: {stock_id}")
         except Exception as e:
             logging.error(f"Error during crawling for stock_id {stock_id}: {e}")

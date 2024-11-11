@@ -9,7 +9,7 @@ from message_response import MessageResponse
 from config import Config
 from utils.extract_data import pg_extract
 from utils.logger import setup_logger
-from stock_response import ScrapyRunner
+from celery_worker import ScrapyRunner
 from celery_config import make_celery
 # ======自訂的函數庫==========
 
