@@ -2,40 +2,42 @@
 
 import os
 import sys
+from celery_config import make_celery
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.project import get_project_settings
+from twisted.internet import reactor, defer
 import logging
 from threading import Thread
-from celery_config import make_celery
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# Log the current reactor
+logging.info(f"Current Twisted reactor: {type(reactor).__name__}")
 # Initialize Celery
 celery = make_celery(
     broker_url=os.environ.get('REDIS_URL'),
     backend_url=os.environ.get('REDIS_URL')
 )
 
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.project import get_project_settings
-from twisted.internet import reactor, defer
-
 class ScrapyRunner:
     def __init__(self):
         # Determine the project root directory
         project_root = os.path.dirname(os.path.abspath(__file__))
         sys.path.insert(0, project_root)
-
+        
         # Set the Scrapy settings module environment variable
         os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'yahoo_news.yahoo_news.settings')
-
+        
         # Get Scrapy project settings
         self.settings = get_project_settings()
-
+        
         # Initialize CrawlerRunner with project settings
         self.runner = CrawlerRunner(self.settings)
-
+        
         # Start the Twisted reactor in a separate thread
         self.start_reactor()
-
+        
     def start_reactor(self):
         if not reactor.running:
             def run_reactor():
@@ -51,10 +53,10 @@ class ScrapyRunner:
         try:
             # Start crawling with 'news_search' spider
             yield self.runner.crawl('news_search', stock_id=str(stock_id))
-
+            
             # Start crawling with 'content' spider
             yield self.runner.crawl('content', stock_id=str(stock_id))
-
+            
             logging.info(f"Crawling completed for stock_id: {stock_id}")
         except Exception as e:
             logging.error(f"Error during crawling for stock_id {stock_id}: {e}")
@@ -71,6 +73,9 @@ def extract_stock_info(self, stock_id='2330'):
     Retries up to 3 times in case of failure, waiting 60 seconds between retries.
     """
     try:
+        logging.info(f"Celery task started for stock_id: {stock_id}")
+        # Initialize ScrapyRunner within the task
+        scraper = ScrapyRunner()
         # Trigger the crawling process
         yield scraper.crawl_spiders(stock_id)
     except Exception as e:
