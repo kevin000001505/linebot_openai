@@ -7,6 +7,8 @@ from scrapy_redis.spiders import RedisSpider
 from scrapy_proj.yahoo_news.items import ContentItem
 from scrapy_proj.yahoo_news import settings
 
+import logging
+logging.info(f"Connecting to Redis at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
 
 class NewsSearchSpider(scrapy.Spider):
     name = "news_search"
