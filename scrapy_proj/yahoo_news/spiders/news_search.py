@@ -1,14 +1,14 @@
-import scrapy
+import scrapy_proj
 from pyquery import PyQuery
 import redis
 import json
 from datetime import datetime, timezone
 from scrapy_redis.spiders import RedisSpider
 from yahoo_news.items import ContentItem
-from yahoo_news import settings
+from scrapy_proj import settings
 
 
-class NewsSearchSpider(scrapy.Spider):
+class NewsSearchSpider(scrapy_proj.Spider):
     name = "news_search"
     start_urls = "https://finance.ettoday.net/search.php7"
 
@@ -24,7 +24,7 @@ class NewsSearchSpider(scrapy.Spider):
     def start_requests(self):
         for page in range(1,3):
             url = f"{self.start_urls}?keyword={self.stock_id}&page={page}"
-            yield scrapy.Request(
+            yield scrapy_proj.Request(
                 url=url,
                 callback=self.parse,
                 meta={'stock_id': self.stock_id, 'page': page}  # Pass metadata for reference in parse
@@ -45,7 +45,7 @@ class NewsSearchSpider(scrapy.Spider):
                 }))
                 reclient.expire("links", settings.SECOND_IN_ONE_MONTH)
 
-class AnueSearchSpider(scrapy.Spider):
+class AnueSearchSpider(scrapy_proj.Spider):
     name = "Anue_search"
     starts_url= "https://ess.api.cnyes.com/ess/api/v1/news/keyword"
 
@@ -61,7 +61,7 @@ class AnueSearchSpider(scrapy.Spider):
     def start_requests(self):
         for page in range(1,2):
             url = f"{self.starts_url}?q={self.stock_id}&limit=20&page={page}"
-            yield scrapy.Request(
+            yield scrapy_proj.Request(
                 url=url,
                 callback=self.parse,
                 meta={'stock_id': self.stock_id, 'page': page}  # Pass metadata for reference in parse
@@ -101,10 +101,10 @@ class ContentSpider(RedisSpider):
             stock_id = link_data["stock_id"]
             website = link_data["website"]
             if website == "Etoday":
-                return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website})
+                return scrapy_proj.Request(url=link, meta={"stock_id": stock_id, "website": website})
             elif website == "Anue":
                 date = link_data["datetime"]
-                return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website, "date": date})
+                return scrapy_proj.Request(url=link, meta={"stock_id": stock_id, "website": website, "date": date})
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse JSON data: {e}")
         except KeyError as e:

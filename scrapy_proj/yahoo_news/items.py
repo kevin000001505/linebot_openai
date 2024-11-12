@@ -3,7 +3,7 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
 
-from scrapy import Field, Item
+from scrapy_proj import Field, Item
 
 
 class ContentItem(Item):
