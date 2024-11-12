@@ -16,11 +16,12 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 BOT_NAME = "yahoo_news"
 
-SPIDER_MODULES = ["yahoo_news.yahoo_news.spiders"]
-NEWSPIDER_MODULE = "yahoo_news.yahoo_news.spiders"
+SPIDER_MODULES = ["yahoo_news.spiders"]
+NEWSPIDER_MODULE = "yahoo_news.spiders"
 
 # REDIS_HOST = "line-chatbot.redis.cache.windows.net"
-REDIS_HOST = "red-csne29aj1k6c73b1t0g0"
+# REDIS_HOST = "red-csne29aj1k6c73b1t0g0"
+REDIS_PORT = "redis-server"
 # REDIS_HOST = "localhost"
 # REDIS_URL = "redis://red-csne29aj1k6c73b1t0g0:6379"
 REDIS_PORT = 6379
@@ -35,7 +36,7 @@ SCHEDULER_PERSIST = True  # Keeps queue between restarts
 # DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
 
 ITEM_PIPELINES = {
-    'yahoo_news.yahoo_news.pipelines.PostgresPipeline': 300,
+    'yahoo_news.pipelines.PostgresPipeline': 300,
 }
 
 POSTGRES_PIPELINE_ENABLED = True
