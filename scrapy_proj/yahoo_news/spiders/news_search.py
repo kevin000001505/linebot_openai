@@ -1,14 +1,14 @@
-import scrapy_proj
+import scrapy
 from pyquery import PyQuery
 import redis
 import json
 from datetime import datetime, timezone
 from scrapy_redis.spiders import RedisSpider
-from yahoo_news.items import ContentItem
-from scrapy_proj import settings
+from scrapy_proj.yahoo_news.items import ContentItem
+from scrapy_proj.yahoo_news import settings
 
 
-class NewsSearchSpider(scrapy_proj.Spider):
+class NewsSearchSpider(scrapy.Spider):
     name = "news_search"
     start_urls = "https://finance.ettoday.net/search.php7"
 
@@ -24,7 +24,7 @@ class NewsSearchSpider(scrapy_proj.Spider):
     def start_requests(self):
         for page in range(1,3):
             url = f"{self.start_urls}?keyword={self.stock_id}&page={page}"
-            yield scrapy_proj.Request(
+            yield scrapy.Request(
                 url=url,
                 callback=self.parse,
                 meta={'stock_id': self.stock_id, 'page': page}  # Pass metadata for reference in parse
@@ -45,7 +45,7 @@ class NewsSearchSpider(scrapy_proj.Spider):
                 }))
                 reclient.expire("links", settings.SECOND_IN_ONE_MONTH)
 
-class AnueSearchSpider(scrapy_proj.Spider):
+class AnueSearchSpider(scrapy.Spider):
     name = "Anue_search"
     starts_url= "https://ess.api.cnyes.com/ess/api/v1/news/keyword"
 
@@ -61,7 +61,7 @@ class AnueSearchSpider(scrapy_proj.Spider):
     def start_requests(self):
         for page in range(1,2):
             url = f"{self.starts_url}?q={self.stock_id}&limit=20&page={page}"
-            yield scrapy_proj.Request(
+            yield scrapy.Request(
                 url=url,
                 callback=self.parse,
                 meta={'stock_id': self.stock_id, 'page': page}  # Pass metadata for reference in parse
@@ -101,10 +101,10 @@ class ContentSpider(RedisSpider):
             stock_id = link_data["stock_id"]
             website = link_data["website"]
             if website == "Etoday":
-                return scrapy_proj.Request(url=link, meta={"stock_id": stock_id, "website": website})
+                return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website})
             elif website == "Anue":
                 date = link_data["datetime"]
-                return scrapy_proj.Request(url=link, meta={"stock_id": stock_id, "website": website, "date": date})
+                return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website, "date": date})
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse JSON data: {e}")
         except KeyError as e:
@@ -134,3 +134,17 @@ class ContentSpider(RedisSpider):
             item["date"] = datetime.strptime(response.meta.get("date"), '%Y-%m-%d %H:%M:%S %Z')
             item["url"] = response.url
             yield item
+
+from twisted.internet import reactor, defer
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.log import configure_logging
+
+configure_logging()
+runner = CrawlerRunner()
+
+@defer.inlineCallbacks
+def crawl(stock_id='2330'):
+    yield runner.crawl(NewsSearchSpider, stock_id=stock_id)
+    yield runner.crawl(AnueSearchSpider, stock_id=stock_id)
+    yield runner.crawl(ContentSpider)
+    reactor.stop()

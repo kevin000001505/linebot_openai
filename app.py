@@ -9,7 +9,7 @@ from message_response import MessageResponse
 from config import Config
 from utils.extract_data import pg_extract
 from utils.logger import setup_logger
-from stock_response import ScrapyRunner
+from worker.celery_worker import fetch_stock_news
 # ======自訂的函數庫==========
 
 
@@ -33,7 +33,6 @@ handler = WebhookHandler(Config.CHANNEL_SECRET)
 
 # Initialize the Message_Response class and ScrapyRunner class
 msg_response = MessageResponse()
-stock = ScrapyRunner()
 
 # stock dictionary
 with open('stock_list.json', 'r', encoding='utf-8') as file:
@@ -241,7 +240,7 @@ def handle_stock_message(event):
     try:
         stock_id = int(msg)
         # Run the Scrapy crawler with the stock ID
-        stock.Extract_Stock_info(stock_id)
+        fetch_stock_news.delay(stock_id)
         # line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
         article_list = pg_extract(stock_id=stock_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Extracting the number of articles: {len(article_list)}"))

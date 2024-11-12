@@ -3,7 +3,7 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-from scrapy_proj import signals
+from scrapy import signals
 import redis
 
 # useful for handling different item types with a single interface
