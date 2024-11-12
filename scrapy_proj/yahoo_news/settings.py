@@ -20,10 +20,10 @@ SPIDER_MODULES = ["yahoo_news.spiders"]
 NEWSPIDER_MODULE = "yahoo_news.spiders"
 
 # REDIS_HOST = "line-chatbot.redis.cache.windows.net"
-# REDIS_HOST = "red-csne29aj1k6c73b1t0g0"
+REDIS_HOST = "red-csne29aj1k6c73b1t0g0"
 # REDIS_HOST = "redis-server"
-REDIS_HOST = "localhost"
-# REDIS_URL = "redis://red-csne29aj1k6c73b1t0g0:6379"
+# REDIS_HOST = "localhost"
+REDIS_URL = "redis://red-csne29aj1k6c73b1t0g0:6379"
 REDIS_PORT = 6379
 
 SECOND_IN_ONE_MONTH = 30 * 24 * 60 * 60  # 30 days in seconds
