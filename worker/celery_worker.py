@@ -1,7 +1,6 @@
 # worker/celery_worker.py
 
 import os
-import sys
 import logging
 from run_spiders import run_spiders
 
