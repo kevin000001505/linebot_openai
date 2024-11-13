@@ -17,6 +17,10 @@ class PostgresPipeline:
         self.pg_password = settings.DB_PASSWORD
 
     def process_item(self, item, spider):
+        # Only process items from ContentSpider
+        if spider.name != 'content':
+            return item
+            
         try:
             self.cur.execute("""
                 INSERT INTO articles (stock_id, title, date, url, content)
@@ -37,6 +41,10 @@ class PostgresPipeline:
         return item
 
     def open_spider(self, spider):
+        # Only open connection for ContentSpider
+        if spider.name != 'content':
+            return
+            
         self.conn = psycopg2.connect(
             host=self.pg_host,
             port=self.pg_port,
@@ -60,5 +68,8 @@ class PostgresPipeline:
         self.conn.commit()
 
     def close_spider(self, spider):
+        # Only close connection for ContentSpider
+        if spider.name != 'content':
+            return
         self.cur.close()
         self.conn.close()
