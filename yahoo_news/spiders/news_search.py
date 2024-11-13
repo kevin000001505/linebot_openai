@@ -3,9 +3,8 @@ from pyquery import PyQuery
 import redis
 import json
 from datetime import datetime, timezone
-from scrapy_redis.spiders import RedisSpider
-from scrapy_proj.yahoo_news.items import ContentItem
-from scrapy_proj.yahoo_news import settings
+from yahoo_news.items import ContentItem
+from yahoo_news import settings
 
 import logging
 logging.info(f"Connecting to Redis at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
@@ -192,16 +191,3 @@ class ContentSpider(scrapy.Spider):
         except Exception as e:
             self._logger.error(f"Error parsing {response.url}: {e}")
 
-from twisted.internet import reactor, defer
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.log import configure_logging
-
-configure_logging()
-runner = CrawlerRunner()
-
-@defer.inlineCallbacks
-def crawl(stock_id='2330'):
-    yield runner.crawl(NewsSearchSpider, stock_id=stock_id)
-    yield runner.crawl(AnueSearchSpider, stock_id=stock_id)
-    yield runner.crawl(ContentSpider)
-    reactor.stop()

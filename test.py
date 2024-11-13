@@ -18,8 +18,9 @@ def check_redis_connection():
 # Example usage
 if __name__ == "__main__":
     # Check Redis connection
-    check_redis_connection()
+    # check_redis_connection()
 
     # You can get stock_id from command line arguments or any other source
     stock_id = "2330"  # Example stock ID
     fetch_stock_news(stock_id)
+    # run_spiders(stock_id)

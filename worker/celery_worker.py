@@ -3,7 +3,7 @@
 import os
 import sys
 import logging
-from scrapy_proj.run_spiders import run_spiders
+from run_spiders import run_spiders
 
 
 # Import make_celery after appending project_root to sys.path
