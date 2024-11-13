@@ -91,26 +91,65 @@ class AnueSearchSpider(scrapy.Spider):
 class ContentSpider(RedisSpider):
     name = "content"
     redis_key = "links"
-
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Add logging configuration
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.DEBUG)
+        
+        # Add Redis connection check
+        try:
+            # Get Redis connection from settings
+            redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}"
+            self.logger.info(f"Attempting to connect to Redis at {redis_url}")
+            
+            # Create Redis client
+            self.redis_client = redis.StrictRedis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=0,
+                decode_responses=True  # This will automatically decode bytes to strings
+            )
+            
+            # Test connection
+            self.redis_client.ping()
+            self.logger.info("Successfully connected to Redis")
+            
+            # Check if there are items in the Redis list
+            links_count = self.redis_client.llen(self.redis_key)
+            self.logger.info(f"Found {links_count} items in Redis list '{self.redis_key}'")
+            
+            # Optional: Print first few items for debugging
+            first_items = self.redis_client.lrange(self.redis_key, 0, 2)
+            self.logger.info(f"First few items in Redis: {first_items}")
+            
+        except redis.ConnectionError as e:
+            self.logger.error(f"Failed to connect to Redis: {e}")
+        except Exception as e:
+            self.logger.error(f"Unexpected error during Redis initialization: {e}")
 
     def make_request_from_data(self, data):
-        # Parse the JSON data from Redis
+        self.logger.info(f"Received data from Redis: {data}")
         try:
             link_data = json.loads(data.decode('utf-8'))
             link = link_data["link"]
             stock_id = link_data["stock_id"]
             website = link_data["website"]
+            
+            self.logger.info(f"Processing link: {link} for stock_id: {stock_id}, website: {website}")
+            
             if website == "Etoday":
                 return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website})
             elif website == "Anue":
                 date = link_data["datetime"]
                 return scrapy.Request(url=link, meta={"stock_id": stock_id, "website": website, "date": date})
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse JSON data: {e}")
+            self.logger.error(f"Failed to parse JSON data: {e}, Raw data: {data}")
         except KeyError as e:
-            self.logger.error(f"Missing key in Redis data: {e}")
+            self.logger.error(f"Missing key in Redis data: {e}, Data: {link_data}")
+        except Exception as e:
+            self.logger.error(f"Unexpected error processing Redis data: {e}")
         return None
 
     def parse(self, response):
