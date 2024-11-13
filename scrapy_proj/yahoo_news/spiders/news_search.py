@@ -109,6 +109,7 @@ class ContentSpider(scrapy.Spider):
             db=0,
             decode_responses=True
         )
+        self.logger = logging.getLogger(self.name)
 
     def start_requests(self):
         """Fetch URLs from Redis and create requests"""
