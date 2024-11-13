@@ -103,13 +103,19 @@ class ContentSpider(scrapy.Spider):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Initialize Redis client
         self.redis_client = redis.StrictRedis(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
             db=0,
             decode_responses=True
         )
-        self.logger = logging.getLogger(self.name)
+        # Initialize logger
+        self._logger = logging.getLogger(self.name)
+
+    @property
+    def logger(self):
+        return self._logger
 
     def start_requests(self):
         """Fetch URLs from Redis and create requests"""
@@ -118,7 +124,7 @@ class ContentSpider(scrapy.Spider):
             while True:
                 data = self.redis_client.lpop("links")
                 if not data:
-                    self.logger.info("No more items in Redis queue")
+                    self._logger.info("No more items in Redis queue")
                     break
 
                 try:
@@ -127,7 +133,7 @@ class ContentSpider(scrapy.Spider):
                     stock_id = link_data["stock_id"]
                     website = link_data["website"]
 
-                    self.logger.info(f"Processing link: {link} for stock_id: {stock_id}, website: {website}")
+                    self._logger.info(f"Processing link: {link} for stock_id: {stock_id}, website: {website}")
 
                     if website == "Etoday":
                         yield scrapy.Request(
@@ -144,16 +150,16 @@ class ContentSpider(scrapy.Spider):
                         )
 
                 except json.JSONDecodeError as e:
-                    self.logger.error(f"Failed to parse JSON data: {e}, Raw data: {data}")
+                    self._logger.error(f"Failed to parse JSON data: {e}, Raw data: {data}")
                 except KeyError as e:
-                    self.logger.error(f"Missing key in Redis data: {e}, Data: {link_data}")
+                    self._logger.error(f"Missing key in Redis data: {e}, Data: {link_data}")
                 except Exception as e:
-                    self.logger.error(f"Unexpected error processing Redis data: {e}")
+                    self._logger.error(f"Unexpected error processing Redis data: {e}")
 
         except redis.ConnectionError as e:
-            self.logger.error(f"Redis Connection Error: {e}")
+            self._logger.error(f"Redis Connection Error: {e}")
         except Exception as e:
-            self.logger.error(f"Unexpected error during Redis operation: {e}")
+            self._logger.error(f"Unexpected error during Redis operation: {e}")
 
     def parse(self, response):
         stock_id = response.meta.get("stock_id")
@@ -184,7 +190,7 @@ class ContentSpider(scrapy.Spider):
                 yield item
 
         except Exception as e:
-            self.logger.error(f"Error parsing {response.url}: {e}")
+            self._logger.error(f"Error parsing {response.url}: {e}")
 
 from twisted.internet import reactor, defer
 from scrapy.crawler import CrawlerRunner
