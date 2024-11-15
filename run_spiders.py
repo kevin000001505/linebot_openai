@@ -1,7 +1,6 @@
-from twisted.internet import reactor, defer
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.log import configure_logging
-from scrapy.utils.project import get_project_settings
+from twisted.internet import reactor, defer # type: ignore
+from scrapy.crawler import CrawlerRunner # type: ignore
+from scrapy.utils.log import configure_logging # type: ignore
 from yahoo_news.spiders.news_search import NewsSearchSpider, AnueSearchSpider, ContentSpider
 # 1. Install the AsyncioSelectorReactor before any other imports
 configure_logging({"LOG_FORMAT": "%(levelname)s: %(message)s"})
@@ -13,9 +12,6 @@ def run_spider(stock_id):
     yield runner.crawl(AnueSearchSpider, stock_id=stock_id)
     yield runner.crawl(ContentSpider)
     reactor.stop()
-    # d = runner.join()
-    # d.addBoth(lambda _: reactor.stop())
-    # reactor.run()
 
 def run_spiders(stock_id):
     run_spider(stock_id)
