@@ -18,7 +18,7 @@ def run_spider(stock_id):
     # reactor.run()
 
 def run_spiders(stock_id):
-    run_spider(stock_id='2330')
+    run_spider(stock_id)
     reactor.run()
 
 
