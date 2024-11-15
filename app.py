@@ -1,8 +1,7 @@
-from flask import Flask, request, abort
-from linebot.models import TextMessage, AudioMessage, ImageMessage
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import *
+from flask import Flask, request, abort # type: ignore
+from linebot.models import TextMessage, AudioMessage, ImageMessage # type: ignore
+from linebot import LineBotApi, WebhookHandler # type: ignore
+from linebot.exceptions import InvalidSignatureError # type: ignore
 
 # ======自訂的函數庫==========
 from message_response import MessageResponse
@@ -15,10 +14,10 @@ from worker.celery_worker import fetch_stock_news
 
 # ======python的函數庫==========
 import tempfile, os
-import boto3
+import boto3 # type: ignore
 import json
 import traceback
-from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import NoCredentialsError # type: ignore
 
 # ======python的函數庫==========
 
@@ -50,7 +49,14 @@ S3_BUCKET = Config.S3_BUCKET
 
 # global variable to store the questions
 last_questions = []
-current_method = '@chat'
+current_method = ""
+chat_method = "@chat"
+stock_method = "@stock"
+
+# regular response
+question_response = "選擇一個問題編號來獲取更多信息"
+error_response = "處理您的請求時發生錯誤，請稍後再試。"
+
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=["POST"])
@@ -79,29 +85,29 @@ def create_quick_reply_buttons(questions):
     ):  # Limit to first 10 questions
         label = f"{index}"
         buttons.append(
-            QuickReplyButton(action=MessageAction(label=label, text=str(index)))
+            QuickReplyButton(action=MessageAction(label=label, text=str(index))) # type: ignore
         )
     return buttons
 
 
-def send_perplexity_response(event, answer, questions=None):
+def send_perplexity_response(event, answer, questions=None): 
     """Helper function to send formatted Perplexity responses"""
     global last_questions
     
     if not questions:
         messages = [
-            TextSendMessage(text=answer),
-            TextSendMessage(text="請提供更詳細的問題"),
+            TextSendMessage(text=answer), # type: ignore
+            TextSendMessage(text="請提供更詳細的問題"), # type: ignore
         ]
     else:
         last_questions = questions.split("\n")
         quick_reply_buttons = create_quick_reply_buttons(last_questions)
         messages = [
-            TextSendMessage(text=answer),
-            TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-            TextSendMessage(
-                text="選擇一個問題編號來獲取更多信息",
-                quick_reply=QuickReply(items=quick_reply_buttons),
+            TextSendMessage(text=answer), # type: ignore
+            TextSendMessage(text=f"以下是後續問題：\n{questions}"), # type: ignore
+            TextSendMessage( # type: ignore
+                text=question_response, 
+                quick_reply=QuickReply(items=quick_reply_buttons), # type: ignore
             ),
         ]
     
@@ -121,11 +127,11 @@ def handle_perplexity_request(event, msg, rephrase=True):
         logger.error(e)
         line_bot_api.reply_message(
             event.reply_token, 
-            TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+            TextSendMessage(error_response) # type: ignore
         )
 
 # 處理文本訊息
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent, message=TextMessage) # type: ignore
 def handle_text_message(event):
     global current_method
     msg = event.message.text
@@ -134,25 +140,25 @@ def handle_text_message(event):
     if msg == "@clear":
         try:
             msg_response.clear_memory()
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("已刪除歷史紀錄")) # type: ignore
             logger.info("成功刪除")
         except Exception as e:
             logger.error(e)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("刪除歷史紀錄出錯")) # type: ignore
         return
 
     # Handle mode switching commands
-    if msg == "@stock":
-        current_method = "@stock"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字"))
+    if msg == stock_method:
+        current_method = stock_method
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("股票模式開啟, 請輸入股票代碼或名字")) # type: ignore
         return
-    elif msg == "@chat" or msg == "@exit":
-        current_method = "@chat"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode."))
+    elif msg == chat_method or msg == "@exit":
+        current_method = chat_method
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("Exiting stock mode.")) # type: ignore
         return
 
     # Handle messages based on current mode
-    if current_method == "@stock":
+    if current_method == stock_method:
         handle_stock_message(event)
     else:
         handle_chat_message(event)
@@ -172,7 +178,7 @@ def handle_chat_message(event):
             # Clear the stored image path
             msg_response.clear_temp_image(user_id)
 
-            Perplexity_answer, questions = msg_response.Perplexity_response(
+            _, questions = msg_response.Perplexity_response(
                 user_id=user_id,
                 msg=f"Provide more information from this object describe:{response}",
             )
@@ -183,18 +189,18 @@ def handle_chat_message(event):
             quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
             messages = [
-                TextSendMessage(text=Perplexity_answer),
-                TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-                TextSendMessage(
-                    text="選擇一個問題編號來獲取更多信息",
-                    quick_reply=QuickReply(items=quick_reply_buttons),
+                TextSendMessage(text=_), # type: ignore
+                TextSendMessage(text=f"以下是後續問題：\n{questions}"), # type: ignore
+                TextSendMessage( # type: ignore
+                    text=question_response,
+                    quick_reply=QuickReply(items=quick_reply_buttons), # type: ignore
                 ),
             ]
             line_bot_api.reply_message(event.reply_token, messages)
         except Exception as e:
             logger.exception(f"Error processing image with info: {e}")
             line_bot_api.reply_message(
-                event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+                event.reply_token, TextSendMessage(error_response) # type: ignore
             )
     else:
         if msg.isdigit() and 1 <= int(msg) <= len(last_questions):
@@ -203,7 +209,7 @@ def handle_chat_message(event):
             handle_perplexity_request(event, select_question, rephrase=False)
         else:
             try:
-                Perplexity_answer, questions = msg_response.Perplexity_response(
+                _, questions = msg_response.Perplexity_response(
                     user_id=user_id,
                     msg=msg,
                 )
@@ -212,25 +218,25 @@ def handle_chat_message(event):
                     quick_reply_buttons = create_quick_reply_buttons(last_questions)
 
                     messages = [
-                        TextSendMessage(text=Perplexity_answer),
-                        TextSendMessage(text=f"以下是後續問題：\n{questions}"),
-                        TextSendMessage(
-                            text="選擇一個問題編號來獲取更多信息",
-                            quick_reply=QuickReply(items=quick_reply_buttons),
+                        TextSendMessage(text=_), # type: ignore
+                        TextSendMessage(text=f"以下是後續問題：\n{questions}"), # type: ignore
+                        TextSendMessage( # type: ignore
+                            text=question_response,
+                            quick_reply=QuickReply(items=quick_reply_buttons), # type: ignore
                         ),
                     ]
                     line_bot_api.reply_message(event.reply_token, messages)
                 else:
                     messages = [
-                        TextSendMessage(text=Perplexity_answer),
-                        TextSendMessage(text="請提供更詳細的問題"),
+                        TextSendMessage(text=_), # type: ignore
+                        TextSendMessage(text="請提供更詳細的問題"), # type: ignore
                     ]
                     line_bot_api.reply_message(event.reply_token, messages)
             except Exception as e:
                 logger.exception(traceback.format_exc())
                 logger.error(e)
                 line_bot_api.reply_message(
-                    event.reply_token, TextSendMessage("處理您的請求時發生錯誤，請稍後再試。")
+                    event.reply_token, TextSendMessage(error_response) # type: ignore
                 )
 
 def handle_stock_message(event):
@@ -243,28 +249,27 @@ def handle_stock_message(event):
         fetch_stock_news.delay(stock_id)
         # line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Handling stock id: {stock_id}"))
         article_list = pg_extract(stock_id=stock_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Extracting the number of articles: {len(article_list)}"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Extracting the number of articles: {len(article_list)}")) # type: ignore
         # Reply the stock information to LLM
     except ValueError:
         try:
             stock_id = stock_dict[msg]
         except KeyError:
             # Use LLM to clarify the right stock name or integer
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"辨識股票代碼錯誤, 查無{msg}股票代碼")) # type: ignore
     except Exception as e:
         # Handle any errors that occur during the crawling process
         logger.error(f"Error handling stock message: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later."))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("An error occurred while processing your request. Please try again later.")) # type: ignore
 
 
 # 處理音訊訊息
-@handler.add(MessageEvent, message=AudioMessage)
+@handler.add(MessageEvent, message=AudioMessage) # type: ignore
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
-    user_id = event.source.user_id
     if not audio_content:
         logger.error("No audio content found.")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="無法獲取音訊內容。"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="無法獲取音訊內容。")) # type: ignore
         return
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tf:
@@ -289,7 +294,7 @@ def handle_audio_message(event):
         logger.exception(f"Error handling audio message:{e}")
         error_message = "處理您的音訊訊息時發生錯誤，請稍後再試。"
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=error_message)
+            event.reply_token, TextSendMessage(text=error_message) # type: ignore
         )
     finally:
         # Clean up the temporary file
@@ -299,7 +304,7 @@ def handle_audio_message(event):
 
 
 # 處理圖片訊息
-@handler.add(MessageEvent, message=ImageMessage)
+@handler.add(MessageEvent, message=ImageMessage) # type: ignore
 def handle_image_message(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     user_id = event.source.user_id
@@ -334,22 +339,22 @@ def handle_image_message(event):
         msg_response.store_temp_image(user_id, temp_image_path, s3_url)
         # Ask the user for more information
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text="請提供更多關於這張圖片的信息或問題。")
+            event.reply_token, TextSendMessage(text="請提供更多關於這張圖片的信息或問題。") # type: ignore
         )
 
 
-@handler.add(PostbackEvent)
+@handler.add(PostbackEvent) # type: ignore
 def handle_message(event):
     print(event.postback.data)
 
 
-@handler.add(MemberJoinedEvent)
+@handler.add(MemberJoinedEvent) # type: ignore
 def welcome(event):
     uid = event.joined.members[0].user_id
     gid = event.source.group_id
     profile = line_bot_api.get_group_member_profile(gid, uid)
     name = profile.display_name
-    message = TextSendMessage(text=f"{name}歡迎加入, 輸入 0 來清除之前的歷史對話")
+    message = TextSendMessage(text=f"{name}歡迎加入, 輸入 0 來清除之前的歷史對話") # type: ignore
     line_bot_api.reply_message(event.reply_token, message)
 
 
