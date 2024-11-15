@@ -6,21 +6,21 @@ import logging
 from datetime import datetime
 
 # Third-party library imports 
-import openai
+import openai # type: ignore
 import requests
-import psycopg2
-import googlemaps
+import psycopg2 # type: ignore
+import googlemaps # type: ignore
 
 # Custom/Local imports
 from config import Config
 from utils.logger import setup_logger
 
 # Langchain imports
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains import ConversationChain
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatPerplexity
-from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory # type: ignore
+from langchain.chains import ConversationChain # type: ignore
+from langchain_core.prompts import ChatPromptTemplate # type: ignore
+from langchain_community.chat_models import ChatPerplexity # type: ignore
+from langchain_openai import ChatOpenAI # type: ignore
 
 logger = setup_logger()
 
@@ -41,14 +41,14 @@ class MessageResponse:
 
     def setup_chat_models(self) -> None:
         """setup the model and prompt"""
-        Perplexity_chat = ChatPerplexity(
+        perplexity_chat = ChatPerplexity(
             temperature=0.2,
             model="llama-3.1-sonar-large-128k-online",
             pplx_api_key=self.Preplexity_API_KEY,
             max_tokens=2048,
         )
 
-        Translate_prompt = ChatPromptTemplate.from_template(
+        translate_prompt = ChatPromptTemplate.from_template(
             """
         You are a helpful assistant. Please respond in traditional Chinese (繁體中文).
 
@@ -60,8 +60,8 @@ class MessageResponse:
         )
 
         self.conversation_with_summary = ConversationChain(
-            llm=Perplexity_chat,
-            prompt=Translate_prompt,
+            llm=perplexity_chat,
+            prompt=translate_prompt,
             memory=self.memory,
             verbose=True,
         )
@@ -151,18 +151,18 @@ class MessageResponse:
             further_questions = self.further_question(msg, history)
 
             logger.debug(f"Response: {response}")
-            
+
             if self.user_info:
                 msg = f"{self.user_info} | {msg}"
                 self.user_info = None
-                
+
             self.save_chat_history(
                 user_id, msg, rephrased_msg, history, response["response"]
             )
             return response["response"], further_questions
         except Exception as e:
             logger.error(f"Error running the chain: {e}")
-            return None, None
+            return "Error", "Error"
 
     def get_conversation_history(self, memory) -> str:
         """
@@ -250,8 +250,6 @@ class MessageResponse:
                 "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"},
             }
         )
-        # with open(image_paths, "rb") as image_file:
-        #     image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.openai_api_key}",

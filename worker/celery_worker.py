@@ -1,11 +1,9 @@
 # worker/celery_worker.py
 
 import os
-import sys
 import logging
-from scrapy_proj.run_spiders import NewsSpiderRunner
+from run_spiders import run_spiders
 
-runner = NewsSpiderRunner()
 
 # Import make_celery after appending project_root to sys.path
 try:
@@ -29,7 +27,7 @@ def fetch_stock_news(self, stock_id='2330'):
     Retries up to 3 times in case of failure, waiting 60 seconds between retries.
     """
     try:
-        runner.run_spiders(stock_id=stock_id)
+        run_spiders(stock_id=stock_id)
         logging.info(f"Celery task completed for stock_id: {stock_id}")
     except Exception as e:
         logging.error(f"Task failed for stock_id {stock_id}: {e}")
