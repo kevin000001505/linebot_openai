@@ -99,7 +99,13 @@ class AnueSearchSpider(scrapy.Spider):
 
 class ContentSpider(scrapy.Spider):
     name = "content"
-    
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'yahoo_news.pipelines.PostgresPipeline': 300,
+        },
+        # Add other settings if needed
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Initialize Redis client

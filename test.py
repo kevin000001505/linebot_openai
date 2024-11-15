@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # check_redis_connection()
 
     # You can get stock_id from command line arguments or any other source
-    stock_id = "2330"  # Example stock ID
-    # fetch_stock_news(stock_id)
-    test_postgresql_connection()
+    stock_id = "2604"  # Example stock ID
+    fetch_stock_news(stock_id)
+    # test_postgresql_connection()
     # run_spiders(stock_id)
