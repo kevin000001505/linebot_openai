@@ -2,7 +2,7 @@ from flask import Flask, request, abort # type: ignore
 from linebot.models import TextMessage, AudioMessage, ImageMessage # type: ignore
 from linebot import LineBotApi, WebhookHandler # type: ignore
 from linebot.exceptions import InvalidSignatureError # type: ignore
-
+from linebot.models import *
 # ======自訂的函數庫==========
 from message_response import MessageResponse
 from config import Config
@@ -269,7 +269,7 @@ def handle_stock_message(event):
 
 
 # 處理音訊訊息
-@handler.add(MessageEvent, message=AudioMessage) # type: ignore
+@handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     audio_content = line_bot_api.get_message_content(event.message.id)
     if not audio_content:
