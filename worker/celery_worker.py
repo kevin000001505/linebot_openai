@@ -2,6 +2,7 @@
 
 import os
 import logging
+from multiprocessing import Process
 from run_spiders import run_spiders
 
 
@@ -27,7 +28,9 @@ def fetch_stock_news(self, stock_id='2330'):
     Retries up to 3 times in case of failure, waiting 60 seconds between retries.
     """
     try:
-        run_spiders(stock_id=stock_id)
+        p = Process(target=run_spiders, args=(stock_id,))
+        p.start()
+        p.join()
         logging.info(f"Celery task completed for stock_id: {stock_id}")
     except Exception as e:
         logging.error(f"Task failed for stock_id {stock_id}: {e}")
