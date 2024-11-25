@@ -8,7 +8,7 @@ from message_response import MessageResponse
 from config import Config
 from utils.extract_data import pg_extract
 from utils.logger import setup_logger
-from worker.celery_worker import fetch_stock_news
+from worker.celery_worker import fetch_stock_news, celery
 # ======自訂的函數庫==========
 
 

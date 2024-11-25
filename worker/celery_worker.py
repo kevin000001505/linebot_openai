@@ -29,6 +29,8 @@ def fetch_stock_news(self, stock_id='2330'):
     try:
         run_spiders(stock_id=stock_id)
         logging.info(f"Celery task completed for stock_id: {stock_id}")
+        return True
     except Exception as e:
         logging.error(f"Task failed for stock_id {stock_id}: {e}")
         self.retry(exc=e)
+        return False
